@@ -1,1 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海外価格 - iPhone相場</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+        summary::-webkit-details-marker { display: none; }
+        summary { list-style: none; }
+        .active-btn {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<header class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+        <nav class="hidden md:flex items-center space-x-6">
+            <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    iPhone 17
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
+                    <a href="market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    過去データ
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+                <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="../past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
+        </nav>
+        <button class="block md:hidden text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+    </div>
+</header>
+
+<main class="container mx-auto px-6 py-8 md:py-12">
+    <!-- ここからコンテンツを再構築します -->
+</main>
+
+<footer class="bg-slate-800 text-white mt-auto">
+    <div class="container mx-auto px-6 py-8 text-center">
+        <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+    </div>
+</footer>
+
+<script>
+    // ヘッダーのドロップダウンメニュー機能
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+        dropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const dropdownId = this.getAttribute('data-dropdown-toggle');
+                const dropdownMenu = document.getElementById(dropdownId);
+                document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
+                    if (menu.id !== dropdownId) menu.classList.add('hidden');
+                });
+                dropdownMenu.classList.toggle('hidden');
+            });
+        });
+        window.addEventListener('click', function(event) {
+            if (!event.target.closest('.js-dropdown')) {
+                document.querySelectorAll('[id$="Dropdown"]').forEach(menu => menu.classList.add('hidden'));
+            }
+        });
+    });
+</script>
+</body>
+</html>
 
