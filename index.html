@@ -41,69 +41,22 @@
                         iPhone 17
                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0 max-h-[70vh] overflow-y-auto">
+                    <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                         <a href="iPhone17/overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone 17</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone Air</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone 17 Pro</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone 17 Pro MAX</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                        <a href="iPhone17/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="iPhone17/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                     </div>
                 </div>
 
-                <!-- 過去データ ドロップダウン (クリック式 + アコーディオン) -->
+                <!-- 過去データ ドロップダウン (クリック式) -->
                 <div class="relative js-dropdown">
                     <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                         過去データ
                          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-64 z-20 border border-slate-100 top-full mt-2 right-0 max-h-[70vh] overflow-y-auto">
-                        <!-- 1週間相場(グラフ) アコーディオン -->
-                        <details class="group/accordion">
-                            <summary class="flex justify-between items-center cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">
-                                <span>1週間相場(グラフ)</span>
-                                <svg class="w-4 h-4 transition-transform duration-200 group-open/accordion:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </summary>
-                            <div class="pl-4 bg-slate-50">
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 Proシリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 Proシリーズ</a>
-                            </div>
-                        </details>
-                        <!-- 1ヶ月相場(グラフ) アコーディオン -->
-                         <details class="group/accordion">
-                            <summary class="flex justify-between items-center cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">
-                                <span>1ヶ月相場(グラフ)</span>
-                                <svg class="w-4 h-4 transition-transform duration-200 group-open/accordion:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </summary>
-                            <div class="pl-4 bg-slate-50">
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 Proシリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 Proシリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 14 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 14 Proシリーズ</a>
-                            </div>
-                        </details>
-                        <!-- 5ヶ月相場(グラフ) アコーディオン -->
-                         <details class="group/accordion">
-                            <summary class="flex justify-between items-center cursor-pointer px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">
-                                <span>5ヶ月相場(グラフ)</span>
-                                <svg class="w-4 h-4 transition-transform duration-200 group-open/accordion:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                            </summary>
-                            <div class="pl-4 bg-slate-50">
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 16 Proシリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 15 Proシリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 14 無印シリーズ</a>
-                                <a href="#" class="block px-4 py-2 text-sm text-slate-600 hover:bg-blue-100 hover:text-blue-700">iPhone 14 Proシリーズ</a>
-                            </div>
-                        </details>
-                        <!-- 通常のリンク -->
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone 16シリーズ 相場ログ</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">iPhone 15シリーズ 相場ログ</a>
+                    <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                        <a href="past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                     </div>
                 </div>
             </nav>
@@ -162,3 +115,4 @@
 
 </body>
 </html>
+
