@@ -20,6 +20,10 @@
             color: white;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
+        /* 容量ボタンを最初は非表示にするためのスタイル */
+        #capacity-selector:not(.visible) {
+            display: none;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -64,7 +68,31 @@
 </header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
-    <!-- ここからコンテンツを再構築します -->
+    <h1 class="text-3xl font-bold text-slate-800 mb-2">海外価格 リアルタイム比較</h1>
+    <p class="text-slate-600 mb-6">このデータはDropboxのCSVファイルから自動更新されます。</p>
+
+    <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+        <div id="model-selector" class="mb-4 flex flex-wrap gap-2 border-b pb-4"></div>
+        <div id="capacity-selector" class="flex flex-wrap gap-2 pt-4">
+             <!-- 容量ボタンは最初は非表示 -->
+        </div>
+    </div>
+
+    <div class="mb-10">
+        <h2 class="text-2xl font-semibold text-slate-700 mb-4">
+            価格の安い国ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
+        </h2>
+        <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
+            <p class="text-center p-8 text-slate-500">機種を選択してください。</p>
+        </div>
+    </div>
+    
+    <div id="cards-section" class="mb-10 hidden">
+        <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
+        <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]">
+            <!-- 国別カードはここに挿入されます -->
+        </div>
+    </div>
 </main>
 
 <footer class="bg-slate-800 text-white mt-auto">
@@ -74,26 +102,267 @@
 </footer>
 
 <script>
-    // ヘッダーのドロップダウンメニュー機能
-    document.addEventListener('DOMContentLoaded', function() {
-        const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
-        dropdownToggles.forEach(toggle => {
-            toggle.addEventListener('click', function(event) {
-                event.stopPropagation();
-                const dropdownId = this.getAttribute('data-dropdown-toggle');
-                const dropdownMenu = document.getElementById(dropdownId);
-                document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
-                    if (menu.id !== dropdownId) menu.classList.add('hidden');
-                });
-                dropdownMenu.classList.toggle('hidden');
+// --- 設定項目 ---
+const DROPBOX_CSV_URL = 'https://www.dropbox.com/scl/fi/ls2rcgkx68xqx31mgqs40/overseas-prices.csv?rlkey=wddtnl73jgqgbwtwcw0s7wagx&st=n7a6tryo&dl=1';
+const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`;
+
+// --- ここから下のコードは変更不要です ---
+
+let allParsedData = [];
+let modelCapacityMap = {};
+
+function parsePrice(priceString) {
+    if (!priceString || typeof priceString !== 'string') return null;
+    const number = parseFloat(priceString.replace(/[^0-9.]/g, ''));
+    return isNaN(number) ? null : number;
+}
+
+function formatPrice(priceNumber) {
+    if (priceNumber === null || typeof priceNumber === 'undefined') return 'N/A';
+    return `¥${Math.round(priceNumber).toLocaleString()}`;
+}
+
+function getDiffColor(diff) {
+    if (diff === null) return 'text-slate-500';
+    if (diff < 0) return 'text-green-600';
+    if (diff > 0) return 'text-red-600';
+    return 'text-slate-500';
+}
+
+function renderContent(model, capacity) {
+    const rankingContainer = document.getElementById('ranking-container');
+    const cardsContainer = document.getElementById('country-cards-container');
+    const cardsSection = document.getElementById('cards-section');
+    document.getElementById('ranking-model-name').textContent = model;
+    document.getElementById('ranking-capacity-name').textContent = capacity;
+
+    let filteredData = allParsedData.filter(item => item.model === model && item.capacity === capacity);
+
+    if (filteredData.length > 0) {
+        // --- ランキング表示 ---
+        const rankingData = [...filteredData].sort((a, b) => a.price - b.price);
+        rankingContainer.innerHTML = '';
+        const ol = document.createElement('ol');
+        ol.className = 'space-y-4';
+        
+        rankingData.forEach((item, index) => {
+            const li = document.createElement('li');
+            const rank = index + 1;
+            let bgColor = 'bg-slate-50';
+
+            if (item.country.includes('日本')) {
+                 bgColor = 'bg-red-100';
+            }
+            if (rank === 1) {
+                 bgColor = 'bg-yellow-100';
+            }
+
+            li.className = `flex items-center justify-between p-3 rounded-md ${bgColor}`;
+            li.innerHTML = `
+                <div class="flex items-center">
+                    <span class="text-lg font-bold w-8 text-center text-slate-700">${item.country.includes('日本') ? '-' : rank}</span>
+                    <span class="ml-4 text-slate-800 font-semibold">${item.country}</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-lg font-bold text-blue-600">${formatPrice(item.price)}</span>
+                </div>`;
+            ol.appendChild(li);
+        });
+        
+        rankingContainer.appendChild(ol);
+
+        // --- 国別カード表示 ---
+        cardsSection.classList.remove('hidden');
+        cardsContainer.innerHTML = '';
+        filteredData.sort((a,b)=> {
+            if (a.country.includes('日本')) return -1;
+            if (b.country.includes('日本')) return 1;
+            return a.country.localeCompare(b.country);
+        }).forEach(item => {
+             const card = document.createElement('div');
+             card.className = "bg-white p-6 rounded-lg shadow-md";
+
+             if (item.country.includes('日本')) {
+                 card.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-800 mb-3">${item.country}</h3>
+                    <dl class="space-y-2 text-sm">
+                        <div class="flex justify-between"><dt class="text-slate-600">日本価格 (税込)</dt><dd class="font-semibold text-slate-800">${formatPrice(item.japanPriceTaxIn)}</dd></div>
+                        <div class="flex justify-between"><dt class="text-slate-600">日本価格 (税抜)</dt><dd class="font-semibold text-slate-800">${formatPrice(item.price)}</dd></div>
+                    </dl>
+                 `;
+             } else {
+                 const diff = (item.price !== null && item.japanPrice !== null) ? item.price - item.japanPrice : null;
+                 const diffText = diff !== null ? `${diff > 0 ? '+' : ''}${Math.round(diff).toLocaleString()}円` : 'N/A';
+                 const otokuText = diff !== null ? (diff < 0 ? `${item.country}の方がお得！` : '日本の方がお得！') : '';
+                 card.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-800 mb-3">${item.country}</h3>
+                    <dl class="space-y-2 text-sm">
+                        <div class="flex justify-between"><dt class="text-slate-600">海外価格 (円換算)</dt><dd class="font-semibold text-slate-800">${formatPrice(item.price)}</dd></div>
+                        <div class="flex justify-between"><dt class="text-slate-600">日本価格 (税抜)</dt><dd class="font-semibold text-slate-800">${formatPrice(item.japanPrice)}</dd></div>
+                        <div class="flex justify-between border-t pt-2 mt-2"><dt class="font-semibold text-slate-600">価格差</dt><dd class="font-bold text-lg ${getDiffColor(diff)}">${diffText}</dd></div>
+                    </dl>
+                    ${otokuText ? `<p class="text-center mt-4 text-sm font-semibold ${getDiffColor(diff)}">${otokuText}</p>` : ''}
+                 `;
+             }
+             cardsContainer.appendChild(card);
+        });
+
+    } else {
+        const noDataHtml = `<p class="text-center p-8 text-slate-500">この条件の表示データがありません。</p>`;
+        rankingContainer.innerHTML = noDataHtml;
+        cardsContainer.innerHTML = '';
+        cardsSection.classList.add('hidden');
+    }
+}
+
+function updateCapacityButtons(model) {
+    const capacityContainer = document.getElementById('capacity-selector');
+    capacityContainer.classList.add('visible');
+    capacityContainer.innerHTML = '';
+    const capacities = modelCapacityMap[model] || [];
+    
+    capacities.forEach((capacity) => {
+        const button = document.createElement('button');
+        button.textContent = capacity;
+        button.className = 'capacity-selector-btn px-3 py-1.5 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200';
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.capacity-selector-btn').forEach(btn => btn.classList.remove('active-btn'));
+            button.classList.add('active-btn');
+            renderContent(model, capacity);
+        });
+        capacityContainer.appendChild(button);
+    });
+
+    if (capacityContainer.firstChild) {
+        capacityContainer.firstChild.click();
+    } else {
+        const noDataHtml = `<p class="text-center p-8 text-slate-500">この機種の容量データがありません。</p>`;
+        document.getElementById('ranking-container').innerHTML = noDataHtml;
+        document.getElementById('cards-section').classList.add('hidden');
+    }
+}
+
+async function initializePage() {
+    const modelSelector = document.getElementById('model-selector');
+    const showError = (message) => {
+        const container = document.getElementById('ranking-container');
+        container.innerHTML = `<p class="text-center p-8 text-red-500">エラー: ${message}</p>`;
+     };
+
+    try {
+        const response = await fetch(PROXY_URL);
+        if (!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
+        const csvText = await response.text();
+        const rows = csvText.trim().replace(/\r/g, '').split('\n').map(r => r.split(',')).filter(r => r.length > 1 && r.join('').trim() !== '');
+
+        const header = rows[0];
+        const japanPricesTaxInRow = rows[1];
+        const japanPricesTaxExRow = rows[2];
+        let modelColumns = {};
+        const countryFlags = {'アメリカ':'🇺🇸', '香港':'🇭🇰', '韓国':'🇰🇷', '日本':'🇯🇵'};
+
+        header.forEach((cell, index) => {
+            if (cell && cell.includes('iPhone')) {
+                const model = cell.trim();
+                modelCapacityMap[model] = [];
+                modelColumns[model] = [];
+                for (let i = index + 1; i < header.length; i++) {
+                    const capacityCell = header[i];
+                    if (capacityCell && (capacityCell.endsWith('GB') || capacityCell.endsWith('TB'))) {
+                        const capacity = capacityCell.trim();
+                        modelCapacityMap[model].push(capacity);
+                        modelColumns[model].push({ capacity, col: i });
+                    } else if (capacityCell && (capacityCell.includes('iPhone') || capacityCell.includes('***'))) {
+                        break;
+                    }
+                }
+            }
+        });
+
+        Object.keys(modelColumns).forEach(model => {
+            modelColumns[model].forEach(mc => {
+                const japanPriceTaxEx = parsePrice(japanPricesTaxExRow[mc.col]);
+                const japanPriceTaxIn = parsePrice(japanPricesTaxInRow[mc.col]);
+                if (japanPriceTaxEx !== null) {
+                    allParsedData.push({ country: `${countryFlags['日本']} 日本`, model, capacity: mc.capacity, price: japanPriceTaxEx, japanPrice: japanPriceTaxEx, japanPriceTaxIn: japanPriceTaxIn });
+                }
             });
         });
-        window.addEventListener('click', function(event) {
-            if (!event.target.closest('.js-dropdown')) {
-                document.querySelectorAll('[id$="Dropdown"]').forEach(menu => menu.classList.add('hidden'));
+
+        for (let i = 3; i < rows.length; i += 5) {
+             const countryBlock = rows.slice(i, i + 5);
+             if (countryBlock.length < 5 || !countryBlock[0][0]) continue;
+            
+            const countryNameRaw = countryBlock[0][0];
+            const countryName = countryNameRaw.substring(2);
+            const flag = countryNameRaw.substring(0, 2);
+            const overseasPriceRow = countryBlock[3];
+            
+            Object.keys(modelColumns).forEach(model => {
+                const modelNameInRow = countryBlock[0].find(c => c && c.trim() === model);
+                if (modelNameInRow) {
+                    modelColumns[model].forEach(mc => {
+                        const overseasPriceYen = parsePrice(overseasPriceRow ? overseasPriceRow[mc.col] : null);
+                        const japanData = allParsedData.find(d => d.country.includes('日本') && d.model === model && d.capacity === mc.capacity);
+                        if (overseasPriceYen !== null) {
+                            allParsedData.push({ 
+                                country: `${flag} ${countryName}`, 
+                                model, 
+                                capacity: mc.capacity, 
+                                price: overseasPriceYen, 
+                                japanPrice: japanData ? japanData.price : null,
+                                japanPriceTaxIn: japanData ? japanData.japanPriceTaxIn : null
+                            });
+                        }
+                    });
+                }
+            });
+        }
+        
+        const models = Object.keys(modelCapacityMap);
+        modelSelector.innerHTML = '';
+        models.forEach((model) => {
+            const button = document.createElement('button');
+            button.textContent = model;
+            button.className = 'model-selector-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100';
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.model-selector-btn').forEach(btn => btn.classList.remove('active-btn'));
+                button.classList.add('active-btn');
+                updateCapacityButtons(model);
+            });
+            modelSelector.appendChild(button);
+        });
+        
+        if (!models.length) {
+            showError("表示できるデータがありません。");
+        }
+    } catch (error) {
+        console.error('エラーが発生しました:', error);
+        showError("データ取得に失敗しました。DropboxのURLが正しいか確認してください。");
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage();
+    // ドロップダウンメニューの制御
+    document.addEventListener('click', e => {
+        const isDropdownButton = e.target.matches("[data-dropdown-toggle]");
+        if (!isDropdownButton && e.target.closest('.js-dropdown') != null) return;
+        
+        let currentDropdown;
+        if (isDropdownButton) {
+            const dropdownId = e.target.getAttribute('data-dropdown-toggle');
+            currentDropdown = document.getElementById(dropdownId);
+            currentDropdown.classList.toggle("hidden");
+        }
+        
+        document.querySelectorAll("[id$='Dropdown']").forEach(dropdown => {
+            if (dropdown !== currentDropdown && !dropdown.classList.contains('hidden')) {
+                 dropdown.classList.add("hidden");
             }
         });
     });
+});
 </script>
 </body>
 </html>
