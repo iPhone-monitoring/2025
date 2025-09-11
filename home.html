@@ -1,1 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>買取相場チェッカー</title>
+    <!-- Tailwind CSSを読み込みます -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 簡単なカスタムスタイル */
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+        .price-up { color: #22c55e; /* green-500 */ }
+        .price-down { color: #ef4444; /* red-500 */ }
+        .price-stable { color: #64748b; /* slate-500 */ }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
 
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-blue-600">買取相場チェッカー</h1>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold">トップ</a>
+                <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold">カテゴリー</a>
+                <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold">ランキング</a>
+                <a href="#" class="text-slate-600 hover:text-blue-600 font-semibold">お知らせ</a>
+            </nav>
+            <button class="md:hidden text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="container mx-auto px-6 py-8 md:py-12">
+
+        <!-- 検索セクション -->
+        <section class="bg-blue-600 text-white rounded-lg p-8 md:p-12 text-center mb-12 shadow-xl">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4">売りたい商品の相場を今すぐチェック</h2>
+            <p class="mb-6 max-w-2xl mx-auto">スマートフォン、ゲーム機、ブランド品など、あらゆる商品の最新買取価格を検索できます。</p>
+            <form id="search-form" class="flex flex-col sm:flex-row max-w-xl mx-auto">
+                <input type="text" id="search-input" placeholder="例）iPhone 15 Pro, PlayStation 5" class="flex-grow w-full px-4 py-3 rounded-md sm:rounded-r-none text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 mb-2 sm:mb-0">
+                <button type="submit" class="bg-blue-800 hover:bg-blue-900 text-white font-bold px-6 py-3 rounded-md sm:rounded-l-none transition duration-300">検索</button>
+            </form>
+        </section>
+
+        <!-- 注目商品セクション -->
+        <section id="featured-items" class="mb-12">
+            <h3 class="text-2xl font-bold text-center mb-8">注目の商品</h3>
+            <div id="featured-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- JavaScriptによって商品カードがここに挿入されます -->
+            </div>
+        </section>
+
+        <!-- 最新の買取情報セクション -->
+        <section id="recent-updates">
+            <h3 class="text-2xl font-bold text-center mb-8">最新の買取情報</h3>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-100">
+                        <tr>
+                            <th class="p-4 font-semibold">商品名</th>
+                            <th class="p-4 font-semibold hidden sm:table-cell">カテゴリー</th>
+                            <th class="p-4 font-semibold">買取相場</th>
+                            <th class="p-4 font-semibold">値動き</th>
+                        </tr>
+                    </thead>
+                    <tbody id="price-table-body">
+                        <!-- JavaScriptによって情報がここに挿入されます -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-800 text-white mt-12">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 買取相場チェッカー. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // --- ダミーデータ ---
+            // 実際のサイトでは、このデータをサーバーからAPI経由で取得します
+            const dummyData = [
+                { name: 'スマートフォンA (256GB)', category: 'スマホ', price: 85000, change: 1500, status: 'up' },
+                { name: '最新ゲーム機B (ディスク版)', category: 'ゲーム', price: 48000, change: -500, status: 'down' },
+                { name: 'ブランドバッグC (新品)', category: 'ブランド品', price: 120000, change: 0, status: 'stable' },
+                { name: 'ノートパソコンD (Core i7)', category: 'PC', price: 110000, change: 2000, status: 'up' },
+                { name: 'デジタルカメラE (レンズキット)', category: 'カメラ', price: 63000, change: -1000, status: 'down' },
+                { name: 'ワイヤレスイヤホンF Pro', category: 'オーディオ', price: 15000, change: 500, status: 'up' },
+                { name: 'スマートウォッチG', category: 'ウェアラブル', price: 32000, change: 0, status: 'stable' },
+                { name: 'タブレットH (Wi-Fiモデル)', category: 'タブレット', price: 54000, change: 1200, status: 'up' },
+            ];
+
+            // --- ユーティリティ関数 ---
+            function formatPrice(price) {
+                return `¥${price.toLocaleString()}`;
+            }
+
+            function getPriceChangeHTML(item) {
+                const sign = item.status === 'up' ? '▲' : item.status === 'down' ? '▼' : '－';
+                const changeClass = `price-${item.status}`;
+                const changeValue = Math.abs(item.change).toLocaleString();
+                return `<span class="font-semibold ${changeClass}">${sign} ${changeValue}</span>`;
+            }
+
+            // --- 注目商品の表示 ---
+            const featuredGrid = document.getElementById('featured-grid');
+            const featuredItems = dummyData.slice(0, 3); // 最初の3つを注目商品として表示
+
+            if (featuredGrid) {
+                featuredItems.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white rounded-lg shadow-md p-6 transform hover:-translate-y-1 transition duration-300';
+                    
+                    card.innerHTML = `
+                        <p class="text-sm text-slate-500 mb-1">${item.category}</p>
+                        <h4 class="text-lg font-bold mb-2">${item.name}</h4>
+                        <p class="text-2xl font-bold text-slate-900 mb-2">${formatPrice(item.price)}</p>
+                        <div class="text-md">
+                            ${getPriceChangeHTML(item)}
+                        </div>
+                    `;
+                    featuredGrid.appendChild(card);
+                });
+            }
+
+
+            // --- 最新の買取情報の表示 ---
+            const priceTableBody = document.getElementById('price-table-body');
+            
+            if(priceTableBody) {
+                dummyData.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-slate-200 last:border-0 hover:bg-slate-50';
+
+                    row.innerHTML = `
+                        <td class="p-4 font-semibold">${item.name}</td>
+                        <td class="p-4 text-slate-600 hidden sm:table-cell">${item.category}</td>
+                        <td class="p-4 font-bold text-lg">${formatPrice(item.price)}</td>
+                        <td class="p-4">${getPriceChangeHTML(item)}</td>
+                    `;
+                    priceTableBody.appendChild(row);
+                });
+            }
+
+            // --- 検索フォームの処理 ---
+            const searchForm = document.getElementById('search-form');
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // フォームのデフォルトの送信を防ぎます
+                    const searchInput = document.getElementById('search-input');
+                    const query = searchInput.value.trim();
+                    if(query){
+                       alert(`「${query}」を検索します。（このデモでは検索機能は実装されていません）`);
+                    } else {
+                       alert('検索キーワードを入力してください。');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
