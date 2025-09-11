@@ -33,7 +33,6 @@
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
             <nav class="hidden md:flex items-center space-x-6">
-                
                 <!-- iPhone 17 ドロップダウン (クリック式) -->
                 <div class="relative js-dropdown">
                     <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
@@ -59,7 +58,8 @@
                     </div>
                 </div>
             </nav>
-            <button class="md:hidden text-slate-600">
+            <!-- 修正点: スマホ表示用の `block` クラスを追加 -->
+            <button class="block md:hidden text-slate-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                 </svg>
