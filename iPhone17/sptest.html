@@ -1,56 +1,109 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>Google Sheets API GIS テスト</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+  <meta charset="UTF-8">
+  <title>iPhone 海外価格ランキング</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-<h1>Google Sheets API GIS テスト</h1>
-<button id="authorize-btn">スプレッドシート読み込み</button>
+<body class="bg-gray-100 text-gray-800 p-6">
 
-<script>
-const SPREADSHEET_ID = '1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso';
-const RANGE = 'iPhone17-overseas-prices!A1:AE19';
+  <h1 class="text-2xl font-bold mb-4">iPhone 海外価格ランキング</h1>
 
-let accessToken = null;
+  <!-- 機種選択 -->
+  <div id="models" class="mb-4 space-x-2"></div>
+  <!-- 容量選択 -->
+  <div id="storages" class="mb-4 space-x-2"></div>
+  <!-- ランキング表示 -->
+  <div id="ranking" class="space-y-2"></div>
 
-const tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: '356906835635-q2le5c9jjcugnvsbn7mmghpoh2g2f3cq.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
-    callback: (tokenResponse) => {
-        accessToken = tokenResponse.access_token;
-        loadSheet();
-    }
-});
+  <script>
+    const SPREADSHEET_ID = "1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso";
+    const RANGE = "iPhone17-overseas-prices!A1:AE19";
+    const API_KEY = "YOUR_API_KEY"; // ←必ず自分のAPIキーに差し替え
 
-document.getElementById('authorize-btn').addEventListener('click', () => {
-    if (!accessToken) {
-        tokenClient.requestAccessToken();
-    } else {
-        loadSheet();
-    }
-});
+    let sheetData = [];
 
-async function loadSheet() {
-    if (!accessToken) {
-        alert('アクセストークンがありません');
-        return;
+    // Google Sheetsからデータ取得
+    async function fetchSheetData() {
+      const res = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`
+      );
+      const data = await res.json();
+      sheetData = data.values;
+      console.log("取得データ:", sheetData);
+      setupModels();
     }
 
-    const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+    // 機種一覧をセット
+    function setupModels() {
+      const headerRow = sheetData[0];
+      const models = [...new Set(headerRow.slice(2, 14))]; // iPhoneモデルだけ抽出
 
-    if (!res.ok) {
-        console.error('取得失敗', await res.text());
-        return;
+      const container = document.getElementById("models");
+      container.innerHTML = "";
+      models.forEach(model => {
+        if (!model) return;
+        const btn = document.createElement("button");
+        btn.textContent = model;
+        btn.className = "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600";
+        btn.onclick = () => setupStorages(model);
+        container.appendChild(btn);
+      });
     }
 
-    const data = await res.json();
-    console.log('取得データ:', data.values);
-    alert('コンソールにデータを出力しました');
-}
-</script>
+    // 容量一覧をセット
+    function setupStorages(model) {
+      const headerRow = sheetData[0];
+      const storageRow = sheetData[1];
+
+      // modelに該当する列を取得
+      const indices = [];
+      headerRow.forEach((val, i) => {
+        if (val === model) indices.push(i);
+      });
+
+      const container = document.getElementById("storages");
+      container.innerHTML = "";
+      indices.forEach(i => {
+        const btn = document.createElement("button");
+        btn.textContent = storageRow[i];
+        btn.className = "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600";
+        btn.onclick = () => showRanking(i);
+        container.appendChild(btn);
+      });
+    }
+
+    // ランキングを表示
+    function showRanking(colIndex) {
+      const countries = sheetData.slice(2); // データ部分
+      const rankingData = countries.map(row => {
+        return {
+          country: row[0],
+          flag: row[29] || "",
+          currency: row[30] || "",
+          price: parseInt(row[colIndex] || "0", 10)
+        };
+      }).filter(d => d.price > 0);
+
+      // 安い順に並べる
+      rankingData.sort((a, b) => a.price - b.price);
+
+      const container = document.getElementById("ranking");
+      container.innerHTML = "";
+      rankingData.forEach((d, i) => {
+        const div = document.createElement("div");
+        div.className = "p-2 bg-white rounded shadow flex justify-between";
+        div.innerHTML = `
+          <span>${i + 1}位 ${d.flag} ${d.country}</span>
+          <span>${d.price.toLocaleString()} ${d.currency}</span>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // ページ読み込み時に取得
+    fetchSheetData();
+  </script>
 </body>
 </html>
