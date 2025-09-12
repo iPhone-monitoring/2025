@@ -28,6 +28,9 @@
         summary {
             list-style: none;
         }
+        details[open] summary svg {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -76,7 +79,7 @@
             <details class="w-full">
                 <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                     <span>iPhone 17</span>
-                    <svg class="w-4 h-4 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </summary>
                 <div class="bg-slate-50">
                     <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
@@ -87,7 +90,7 @@
              <details class="w-full">
                 <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                     <span>過去データ</span>
-                    <svg class="w-4 h-4 transition-transform transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </summary>
                 <div class="bg-slate-50">
                     <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
@@ -129,7 +132,6 @@
 
 <script>
 const DROPBOX_CSV_URL = 'https://www.dropbox.com/scl/fi/ls2rcgkx68xqx31mgqs40/overseas-prices.csv?rlkey=wddtnl73jgqgbwtwcw0s7wagx&dl=1';
-// Changed proxy service to another alternative to fix fetch errors
 const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`;
 
 let allParsedData = [];
@@ -359,7 +361,6 @@ async function initializePage(){
 
     try{
         const response=await fetchWithRetry(PROXY_URL);
-        // if(!response.ok) throw new Error(`サーバーエラー: ${response.status}`);
         const csvText=await response.text();
         const rows=csvText.trim().replace(/\r/g,'').split('\n').map(r=>r.split(',')).filter(r=>r.length>1 && r.join('').trim()!=='');
 
@@ -482,9 +483,7 @@ async function initializePage(){
     }
 }
 
-document.addEventListener('DOMContentLoaded', initializePage);
-
-document.addEventListener('DOMContentLoaded', function() {
+function setupEventListeners() {
     // デスクトップ用ドロップダウン
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
@@ -493,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
             
-            document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
                 if (menu.id !== dropdownId) {
                     menu.classList.add('hidden');
                 }
@@ -505,7 +504,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 他の場所をクリックしたらドロップダウンを閉じる
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
-            document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
                 menu.classList.add('hidden');
             });
         }
@@ -515,15 +514,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', () => {
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
             mobileMenu.classList.toggle('hidden');
         });
     }
 
     // モバイルメニュー内のアコーディオン
-    const detailsElements = mobileMenu.querySelectorAll('details');
+    const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
-        details.addEventListener('toggle', function(event) {
+        details.addEventListener('toggle', function() {
             if (this.open) {
                 // 他の開いているdetailsを閉じる
                 detailsElements.forEach(otherDetails => {
@@ -531,15 +531,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         otherDetails.removeAttribute('open');
                     }
                 });
-                // アイコンを回転
-                this.querySelector('svg').classList.add('rotate-180');
-            } else {
-                // アイコンを元に戻す
-                this.querySelector('svg').classList.remove('rotate-180');
             }
         });
     });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage();
+    setupEventListeners();
 });
+
 </script>
 </body>
 </html>
