@@ -35,8 +35,9 @@
     <!-- ヘッダー -->
     <header class="bg-white shadow-md sticky top-0 z-10">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <a href="index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+            <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
             <nav class="hidden md:flex items-center space-x-6">
+                <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
                 <!-- iPhone 17 ドロップダウン (クリック式) -->
                 <div class="relative js-dropdown">
                     <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
@@ -44,9 +45,9 @@
                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
-                        <a href="iPhone17/overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
-                        <a href="iPhone17/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
-                        <a href="iPhone17/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                        <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
+                        <a href="market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                     </div>
                 </div>
 
@@ -57,8 +58,8 @@
                          <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
-                        <a href="past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
-                        <a href="past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                        <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="../past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                     </div>
                 </div>
             </nav>
@@ -152,11 +153,25 @@ function renderContent(model,capacity){
     rankingData.forEach((item,index)=>{
         const li=document.createElement('li');
         const rank=index+1;
-        let bgColor='bg-slate-50';
+        
+        let bgColor='bg-slate-50'; // Default color
         let rankColor='text-slate-500';
-        if(rank===1) { bgColor='bg-yellow-100'; rankColor='text-yellow-600'; }
-        if(rank===2) { bgColor='bg-slate-200'; rankColor='text-slate-600'; }
-        if(rank===3) { bgColor='bg-orange-100'; rankColor='text-orange-600'; }
+
+        if(rank===1) { 
+            bgColor='bg-yellow-100'; 
+            rankColor='text-yellow-600';
+        } else if(rank===2) { 
+            bgColor='bg-slate-200'; 
+            rankColor='text-slate-600';
+        } else if(rank===3) { 
+            bgColor='bg-orange-100'; 
+            rankColor='text-orange-600';
+        }
+
+        // 4位以下で日本の場合に背景色を上書き
+        if (item.country === '日本' && rank >= 4) {
+            bgColor = 'bg-red-100';
+        }
         
         li.className=`flex items-center justify-between p-3 rounded-md ${bgColor}`;
         li.innerHTML=`
@@ -171,7 +186,7 @@ function renderContent(model,capacity){
     });
     rankingContainer.appendChild(ol);
 
-    // --- 国別カード ---
+    // --- 国別カード (リファクタリング後) ---
     cardsSection.classList.remove('hidden');
     cardsContainer.innerHTML='';
     
@@ -182,68 +197,53 @@ function renderContent(model,capacity){
         const item=filteredData.find(d=>d.country===cn);
         if(!item) return;
 
-        const card=document.createElement('div'); card.className='bg-white p-5 rounded-lg shadow-md flex flex-col';
+        const card=document.createElement('div');
+        card.className='bg-white p-5 rounded-lg shadow-md flex flex-col';
+        const isJapan = item.country === '日本';
         const cardTitle = `${item.flag || ''} ${item.country}`;
 
-        if(item.country==='日本'){
-            card.innerHTML=`
-                <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
-                <!-- Section 1: Tax Rate -->
-                <div class="grid grid-cols-3 gap-2 text-center border-y py-3">
-                    <div class="col-span-3">
-                        <p class="text-xs text-slate-500">税率</p>
-                        <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
-                    </div>
-                </div>
-                <!-- Section 2: Prices -->
-                <dl class="space-y-3 text-sm py-3 border-b mb-3">
-                    <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税込)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPriceTaxIn)}</dd></div>
-                    <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税抜)</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.japanPrice)}</dd></div>
-                </dl>
-                <!-- Section 3: Notes -->
-                <div class="mt-auto">
-                    <p class="text-xs text-slate-500">※こちらは参考価格です。</p>
-                </div>
-            `;
-        } else {
-            const diff=item.price - (item.japanPrice||0);
-            const diffText=diff>=0?`+${Math.round(diff).toLocaleString()}円`:`${Math.round(diff).toLocaleString()}円`;
-            const japanDisplayName = `${rankingData.find(c => c.country === '日本')?.flag || '🇯🇵'} 日本`;
-            const otokuText=diff<0?`${cardTitle}のほうがお得`:`${japanDisplayName}のほうがお得`;
-            const formattedLocalPrice = item.localPrice ? Number(item.localPrice).toLocaleString() : 'N/A';
-            const currencySymbol = item.currencySymbol || '';
+        const section1HTML = isJapan ?
+            `<div class="col-span-3">
+                <p class="text-xs text-slate-500">税率</p>
+                <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
+            </div>` :
+            `<div>
+                <p class="text-xs text-slate-500">為替</p>
+                <p class="font-semibold text-sm text-slate-700">${item.exchangeRate ? formatExchangeRate(item.exchangeRate) + '円' : 'N/A'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500">税率</p>
+                <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500">現地価格</p>
+                <p class="font-semibold text-sm text-slate-700">${item.currencySymbol || ''}${item.localPrice ? Number(item.localPrice).toLocaleString() : 'N/A'}</p>
+            </div>`;
 
-            card.innerHTML=`
-                <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
-                <!-- Section 1: Exchange, Tax, Local Price -->
-                <div class="grid grid-cols-3 gap-2 text-center border-y py-3">
-                    <div>
-                        <p class="text-xs text-slate-500">為替</p>
-                        <p class="font-semibold text-sm text-slate-700">${item.exchangeRate ? formatExchangeRate(item.exchangeRate) + '円' : 'N/A'}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500">税率</p>
-                        <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs text-slate-500">現地価格</p>
-                        <p class="font-semibold text-sm text-slate-700">${currencySymbol}${formattedLocalPrice}</p>
-                    </div>
-                </div>
-                <!-- Section 2: Price Comparison -->
-                <dl class="space-y-3 text-sm py-3 border-b mb-3">
-                    <div class="flex justify-between items-center"><dt class="text-slate-600">日本円換算価格</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.price)}</dd></div>
-                    <div class="flex justify-between items-center"><dt class="text-slate-600">日本価格(税抜)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPrice)}</dd></div>
-                </dl>
-                <!-- Section 3: Difference & Verdict -->
-                <div class="mt-auto">
-                    <dl class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
-                    </dl>
-                    <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>
-                </div>
-            `;
-        }
+        const section2HTML = isJapan ?
+            `<div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税込)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPriceTaxIn)}</dd></div>
+             <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税抜)</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.japanPrice)}</dd></div>` :
+            `<div class="flex justify-between items-center"><dt class="text-slate-600">日本円換算価格</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.price)}</dd></div>
+             <div class="flex justify-between items-center"><dt class="text-slate-600">日本価格(税抜)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPrice)}</dd></div>`;
+
+        const diff = isJapan ? null : item.price - (item.japanPrice || 0);
+        const diffText = diff === null ? '' : (diff >= 0 ? `+${Math.round(diff).toLocaleString()}円` : `${Math.round(diff).toLocaleString()}円`);
+        const japanDisplayName = `${rankingData.find(c => c.country === '日本')?.flag || '🇯🇵'} 日本`;
+        const otokuText = diff === null ? '' : (diff < 0 ? `${cardTitle}のほうがお得` : `${japanDisplayName}のほうがお得`);
+
+        const section3HTML = isJapan ?
+            `<p class="text-xs text-slate-500">※こちらは参考価格です。</p>` :
+            `<dl class="space-y-3 text-sm">
+                <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
+             </dl>
+             <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>`;
+
+        card.innerHTML = `
+            <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
+            <div class="grid grid-cols-3 gap-2 text-center border-y py-3">${section1HTML}</div>
+            <dl class="space-y-3 text-sm py-3 border-b mb-3">${section2HTML}</dl>
+            <div class="mt-auto">${section3HTML}</div>
+        `;
         cardsContainer.appendChild(card);
     });
 }
