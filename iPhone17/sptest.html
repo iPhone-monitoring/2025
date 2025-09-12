@@ -1,109 +1,562 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>iPhone 海外価格ランキング</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海外価格 - iPhone相場</title>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main { flex-grow: 1; }
+        .active-btn { 
+            background-color:#2563eb !important; 
+            color:white !important; 
+            border-color: #2563eb !important;
+            box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); 
+        }
+        #capacity-selector:not(.visible){ display:none; }
+        summary::-webkit-details-marker { display: none; }
+        summary { list-style: none; }
+        details[open] summary svg { transform: rotate(180deg); }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-800 p-6">
+<body class="bg-slate-50 text-slate-800">
 
-  <h1 class="text-2xl font-bold mb-4">iPhone 海外価格ランキング</h1>
+    <!-- ヘッダー -->
+    <header class="bg-white shadow-md sticky top-0 z-10">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+            <nav class="hidden md:flex items-center space-x-6">
+                <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
+                <div class="relative js-dropdown">
+                    <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                        iPhone 17
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                        <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
+                        <a href="market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                    </div>
+                </div>
+                <div class="relative js-dropdown">
+                    <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                        過去データ
+                         <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                        <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                        <a href="../past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                    </div>
+                </div>
+            </nav>
+            <button id="mobile-menu-button" class="block md:hidden text-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+            </button>
+        </div>
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+            <a href="../index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
+            <details class="w-full">
+                <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                    <span>iPhone 17</span>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <div class="bg-slate-50">
+                    <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
+                    <a href="market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                    <a href="market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+                </div>
+            </details>
+             <details class="w-full">
+                <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                    <span>過去データ</span>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <div class="bg-slate-50">
+                    <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                    <a href="../past-data/market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+                </div>
+            </details>
+        </div>
+    </header>
 
-  <!-- 機種選択 -->
-  <div id="models" class="mb-4 space-x-2"></div>
-  <!-- 容量選択 -->
-  <div id="storages" class="mb-4 space-x-2"></div>
-  <!-- ランキング表示 -->
-  <div id="ranking" class="space-y-2"></div>
+<main class="container mx-auto px-6 py-8 md:py-12">
+<h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
 
-  <script>
-    const SPREADSHEET_ID = "1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso";
-    const RANGE = "iPhone17-overseas-prices!A1:AE19";
-    const API_KEY = "AIzaSyAatT-TRX-r8yfRS9lklAPR7iVrCmITZIk"; // ←必ず自分のAPIキーに差し替え
+<div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
+    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
+</div>
 
-    let sheetData = [];
+<div class="mb-10">
+    <h2 class="text-2xl font-semibold text-slate-700 mb-4">
+        実質価格ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
+    </h2>
+    <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
+        <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
+    </div>
+</div>
 
-    // Google Sheetsからデータ取得
-    async function fetchSheetData() {
-      const res = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${RANGE}?key=${API_KEY}`
-      );
-      const data = await res.json();
-      sheetData = data.values;
-      console.log("取得データ:", sheetData);
-      setupModels();
+<div id="cards-section" class="mb-10 hidden">
+    <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
+    <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
+</div>
+</main>
+
+    <!-- フッター -->
+    <footer class="bg-slate-800 text-white mt-auto">
+        <div class="container mx-auto px-6 py-8 text-center">
+            <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+        </div>
+    </footer>
+
+<script>
+/*
+  Google Sheets -> UI フル統合版
+  - 非公開スプレッドシートを OAuth (GIS) で読み出して
+    元の UI ロジック（モデル/容量選択、ランキング、カード）で表示します。
+
+  必要:
+  - Google Cloud で OAuth クライアント (Web アプリ) を作成しておく
+  - クライアントID を下の CLIENT_ID にセット
+  - OAuth 同意画面で自分の Google アカウントをテストユーザーに追加
+  - SPREADSHEET_ID と RANGE は既に指定済み（あなたのシート）
+*/
+
+const CLIENT_ID = '356906835635-q2le5c9jjcugnvsbn7mmghpoh2g2f3cq.apps.googleusercontent.com';
+const SPREADSHEET_ID = '1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso';
+const RANGE = 'iPhone17-overseas-prices!A1:AE19';
+
+// 内部データ
+let allParsedData = [];
+let modelCapacityMap = {};
+let sheetValues = []; // raw values from Sheets
+let accessToken = null;
+let tokenClient = null;
+
+/* ---- ユーティリティ ---- */
+function parsePrice(str) {
+    if (!str && str !== 0) return null;
+    if (typeof str === 'number') return str;
+    const n = parseFloat(String(str).replace(/[^0-9.]/g, ''));
+    return isNaN(n) ? null : n;
+}
+function formatPrice(n){ return n===null?'N/A':'¥'+Math.round(n).toLocaleString(); }
+function getDiffColor(diff){ if(diff===null)return 'text-slate-500'; if(diff<0)return 'text-red-600'; if(diff>0)return 'text-green-600'; return 'text-slate-500'; }
+function formatExchangeRate(rateStr) {
+    if (!rateStr) return 'N/A';
+    const rate = parseFloat(rateStr);
+    if (isNaN(rate)) return 'N/A';
+    return rate >= 1 ? rate.toFixed(2) : rate.toFixed(3);
+}
+
+/* ---- UIレンダリング (ほぼ元のまま) ---- */
+function renderContent(model, capacity) {
+    const rankingContainer = document.getElementById('ranking-container');
+    const cardsContainer = document.getElementById('country-cards-container');
+    const cardsSection = document.getElementById('cards-section');
+    document.getElementById('ranking-model-name').textContent = model;
+    document.getElementById('ranking-capacity-name').textContent = capacity;
+
+    const filteredData = allParsedData.filter(item => item.model === model && item.capacity === capacity);
+
+    if (filteredData.length === 0) {
+        rankingContainer.innerHTML = '<p class="text-center p-8 text-slate-500">この条件の表示データがありません。</p>';
+        cardsContainer.innerHTML = '';
+        cardsSection.classList.add('hidden');
+        return;
     }
 
-    // 機種一覧をセット
-    function setupModels() {
-      const headerRow = sheetData[0];
-      const models = [...new Set(headerRow.slice(2, 14))]; // iPhoneモデルだけ抽出
+    const chinaData = filteredData.find(item => item.country === '中国');
+    const otherCountriesData = filteredData.filter(item => item.country !== '中国');
 
-      const container = document.getElementById("models");
-      container.innerHTML = "";
-      models.forEach(model => {
-        if (!model) return;
-        const btn = document.createElement("button");
-        btn.textContent = model;
-        btn.className = "px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600";
-        btn.onclick = () => setupStorages(model);
-        container.appendChild(btn);
-      });
+    const rankingData = [...otherCountriesData].sort((a, b) => a.price - b.price);
+    rankingContainer.innerHTML = '';
+    const ol = document.createElement('ol');
+    ol.className = 'space-y-4';
+    rankingData.forEach((item, index) => {
+        const li = document.createElement('li');
+        const rank = index + 1;
+        let bgColor = 'bg-slate-50';
+        let rankColor = 'text-slate-500';
+        if (rank === 1) { bgColor = 'bg-yellow-100'; rankColor = 'text-yellow-600'; }
+        else if (rank === 2) { bgColor = 'bg-slate-200'; rankColor = 'text-slate-600'; }
+        else if (rank === 3) { bgColor = 'bg-orange-100'; rankColor = 'text-orange-600'; }
+        if (item.country === '日本' && rank >= 4) { bgColor = 'bg-red-100'; }
+
+        li.className = `flex items-center justify-between p-3 rounded-md ${bgColor}`;
+        li.innerHTML = `
+            <div class="flex items-center">
+                <span class="text-xl font-bold w-8 text-center ${rankColor}">${rank}</span>
+                <span class="ml-4 text-slate-800 font-semibold text-lg">${item.flag || ''} ${item.country}</span>
+            </div>
+            <div class="text-right">
+                <span class="text-lg font-bold text-slate-800">${formatPrice(item.price)}</span>
+            </div>`;
+        ol.appendChild(li);
+    });
+
+    if (chinaData) {
+        const li = document.createElement('li');
+        li.className = `flex items-center justify-between p-3 rounded-md bg-slate-50`;
+        li.innerHTML = `
+            <div class="flex items-center">
+                <span class="text-xl font-bold w-8 text-center text-slate-500">-</span>
+                <span class="ml-4 text-slate-800 font-semibold text-lg">${chinaData.flag || ''} ${chinaData.country}</span>
+            </div>
+            <div class="text-right">
+                <span class="text-lg font-bold text-slate-800">${formatPrice(chinaData.price)}</span>
+            </div>`;
+        ol.appendChild(li);
     }
+    rankingContainer.appendChild(ol);
 
-    // 容量一覧をセット
-    function setupStorages(model) {
-      const headerRow = sheetData[0];
-      const storageRow = sheetData[1];
+    // --- 国別カード ---
+    cardsSection.classList.remove('hidden');
+    cardsContainer.innerHTML = '';
 
-      // modelに該当する列を取得
-      const indices = [];
-      headerRow.forEach((val, i) => {
-        if (val === model) indices.push(i);
-      });
+    const rankedCountryNames = rankingData.map(item => item.country);
+    const displayOrder = ['日本', ...rankedCountryNames.filter(name => name !== '日本')];
+    if (chinaData) displayOrder.push('中国');
 
-      const container = document.getElementById("storages");
-      container.innerHTML = "";
-      indices.forEach(i => {
-        const btn = document.createElement("button");
-        btn.textContent = storageRow[i];
-        btn.className = "px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600";
-        btn.onclick = () => showRanking(i);
-        container.appendChild(btn);
-      });
-    }
+    displayOrder.forEach(cn => {
+        const item = filteredData.find(d => d.country === cn);
+        if (!item) return;
 
-    // ランキングを表示
-    function showRanking(colIndex) {
-      const countries = sheetData.slice(2); // データ部分
-      const rankingData = countries.map(row => {
-        return {
-          country: row[0],
-          flag: row[29] || "",
-          currency: row[30] || "",
-          price: parseInt(row[colIndex] || "0", 10)
-        };
-      }).filter(d => d.price > 0);
+        const card = document.createElement('div');
+        card.className = 'bg-white p-5 rounded-lg shadow-md flex flex-col';
+        const isJapan = item.country === '日本';
+        const cardTitle = `${item.flag || ''} ${item.country}`;
 
-      // 安い順に並べる
-      rankingData.sort((a, b) => a.price - b.price);
+        const section1HTML = isJapan ?
+            `<div class="col-span-3">
+                <p class="text-xs text-slate-500">税率</p>
+                <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
+            </div>` :
+            `<div>
+                <p class="text-xs text-slate-500">為替</p>
+                <p class="font-semibold text-sm text-slate-700">${item.exchangeRate ? formatExchangeRate(item.exchangeRate) + '円' : 'N/A'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500">税率</p>
+                <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500">現地価格</p>
+                <p class="font-semibold text-sm text-slate-700">${item.currencySymbol || ''}${item.localPrice ? Number(item.localPrice).toLocaleString() : 'N/A'}</p>
+            </div>`;
 
-      const container = document.getElementById("ranking");
-      container.innerHTML = "";
-      rankingData.forEach((d, i) => {
-        const div = document.createElement("div");
-        div.className = "p-2 bg-white rounded shadow flex justify-between";
-        div.innerHTML = `
-          <span>${i + 1}位 ${d.flag} ${d.country}</span>
-          <span>${d.price.toLocaleString()} ${d.currency}</span>
+        const section2HTML = isJapan ?
+            `<div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税込)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPriceTaxIn)}</dd></div>
+             <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税抜)</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.japanPrice)}</dd></div>` :
+            `<div class="flex justify-between items-center"><dt class="text-slate-600">日本円換算価格</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.price)}</dd></div>
+             <div class="flex justify-between items-center"><dt class="text-slate-600">日本価格(税抜)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPrice)}</dd></div>`;
+
+        let section3HTML;
+        if (item.country === '中国') {
+            section3HTML = `<p class="text-center text-sm font-semibold text-slate-600">機能に制限があるため除外しています</p>`;
+        } else if (isJapan) {
+            section3HTML = `<p class="text-xs text-slate-500 text-center">※こちらは参考価格です。</p>`;
+        } else {
+            const diff = item.price - (item.japanPrice || 0);
+            const diffText = diff === null ? '' : (diff >= 0 ? `+${Math.round(diff).toLocaleString()}円` : `${Math.round(diff).toLocaleString()}円`);
+            const japanDisplayName = `${rankingData.find(c => c.country === '日本')?.flag || '🇯🇵'} 日本`;
+            const otokuText = diff === null ? '' : (diff < 0 ? `${cardTitle}のほうがお得` : `${japanDisplayName}のほうがお得`);
+            section3HTML = `<div class="w-full">
+                <dl class="text-sm">
+                  <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
+                </dl>
+                <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>
+            </div>`;
+        }
+
+        card.innerHTML = `
+            <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
+            <div class="grid grid-cols-3 gap-2 text-center border-y py-3">${section1HTML}</div>
+            <dl class="space-y-3 text-sm py-3 border-b mb-3">${section2HTML}</dl>
+            <div class="mt-auto flex-grow flex flex-col items-center justify-center">${section3HTML}</div>
         `;
-        container.appendChild(div);
-      });
+        cardsContainer.appendChild(card);
+    });
+}
+
+/* ---- 選択ロジック（UIボタン） ---- */
+function selectModel(model, btnElement) {
+    document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active-btn'));
+    btnElement.classList.add('active-btn');
+
+    document.getElementById('ranking-model-name').textContent = model;
+    document.getElementById('ranking-capacity-name').textContent = '';
+    document.getElementById('ranking-container').innerHTML = '<p class="text-center p-8 text-slate-500">容量を選択してください。</p>';
+    document.getElementById('cards-section').classList.add('hidden');
+
+    const capacityContainer = document.getElementById('capacity-selector');
+    capacityContainer.classList.add('visible');
+    capacityContainer.innerHTML = '';
+
+    const capacities = modelCapacityMap[model] || [];
+    capacities.forEach(cap => {
+        const btn = document.createElement('button');
+        btn.textContent = cap;
+        btn.className = 'capacity-selector-btn px-3 py-1.5 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.capacity-selector-btn').forEach(b => b.classList.remove('active-btn'));
+            btn.classList.add('active-btn');
+            renderContent(model, cap);
+        });
+        capacityContainer.appendChild(btn);
+    });
+}
+
+/* ---- Sheets API 呼び出し部分（GIS でトークン取得して fetch） ---- */
+function initTokenClient() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+        callback: (resp) => {
+            if (resp.error) {
+                console.error('token error', resp);
+                showError('認証に失敗しました。コンソールを確認してください。');
+                return;
+            }
+            accessToken = resp.access_token;
+            // 取得したらページ初期化
+            fetchSheetAndInit();
+        }
+    });
+}
+
+// Fetch sheet values with Bearer token
+async function fetchSheetValues() {
+    if (!accessToken) {
+        // ユーザー操作でtokenを要求
+        tokenClient.requestAccessToken();
+        return;
+    }
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(RANGE)}`;
+    const res = await fetch(url, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Sheets API error: ${res.status} - ${text}`);
+    }
+    const json = await res.json();
+    return json.values || [];
+}
+
+function showError(msg) {
+    document.getElementById('ranking-container').innerHTML = `<p class="text-center p-8 text-red-500">${msg}</p>`;
+}
+
+// fetch -> parse -> build UI
+async function fetchSheetAndInit() {
+    const modelSelector = document.getElementById('model-selector');
+    try {
+        const rows = await fetchSheetValues();
+        if (!rows || rows.length < 3) throw new Error('シートのデータが不正、もしくは範囲が間違っています。');
+
+        // raw values
+        sheetValues = rows;
+
+        // --- Build modelCapacityMap from header rows ---
+        modelCapacityMap = {};
+        const header = rows[0];
+        const capacityHeader = rows[1];
+
+        // dynamic: iterate all columns
+        let currentModel = null;
+        for (let i = 2; i < header.length; i++) {
+            const modelCell = header[i] ? String(header[i]).trim() : '';
+            const capCell = capacityHeader[i] ? String(capacityHeader[i]).trim() : '';
+            if (modelCell) currentModel = modelCell;
+            // capacity detection (flexible): GB or TB or numeric+GB/TB
+            if (currentModel && /(\d+\s*GB|\d+\s*TB|GB|TB)$/i.test(capCell)) {
+                if (!modelCapacityMap[currentModel]) modelCapacityMap[currentModel] = [];
+                if (!modelCapacityMap[currentModel].includes(capCell)) modelCapacityMap[currentModel].push(capCell);
+            }
+        }
+
+        // --- Build allParsedData structure compatible with renderContent ---
+        allParsedData = [];
+        const dataRows = rows.slice(2);
+
+        // find Japanese rows
+        const japanTaxInRow = dataRows.find(r => r[1] && String(r[1]).includes('日本価格(税込)'));
+        const japanTaxExRow = dataRows.find(r => r[1] && String(r[1]).includes('日本価格(税抜)'));
+        if (!japanTaxInRow || !japanTaxExRow) {
+            // fallback: try to find row where r[0] === '日本'
+            console.warn('日本価格行が見つかりません。代替検索を試みます。');
+        }
+
+        const japanTaxRate = japanTaxInRow ? parsePrice(japanTaxInRow[15]) : null;
+        const japanFlag = japanTaxInRow && japanTaxInRow[29] ? String(japanTaxInRow[29]).trim() : '🇯🇵';
+        const japanCurrencySymbol = japanTaxInRow && japanTaxInRow[30] ? String(japanTaxInRow[30]).trim() : '¥';
+
+        // prepare map of Japan prices by model_capacity
+        const japanDataStore = {};
+        for (const colIndexStr in modelCapacityMap) {
+            // nothing here: modelCapacityMap keys are model names. We'll instead iterate columns again:
+        }
+        // iterate columns to capture model/capacity columns
+        const columnMap = {};
+        currentModel = null;
+        for (let i = 2; i < header.length; i++) {
+            const modelCell = header[i] ? String(header[i]).trim() : '';
+            const capCell = capacityHeader[i] ? String(capacityHeader[i]).trim() : '';
+            if (modelCell) currentModel = modelCell;
+            if (currentModel && /(\d+\s*GB|\d+\s*TB|GB|TB)$/i.test(capCell)) {
+                columnMap[i] = { model: currentModel, capacity: capCell };
+                // ensure modelCapacityMap has it too (already added but safe)
+                if (!modelCapacityMap[currentModel]) modelCapacityMap[currentModel] = [];
+                if (!modelCapacityMap[currentModel].includes(capCell)) modelCapacityMap[currentModel].push(capCell);
+            }
+        }
+
+        // build japanDataStore from found rows
+        if (japanTaxInRow && japanTaxExRow) {
+            for (const colIndex in columnMap) {
+                const { model, capacity } = columnMap[colIndex];
+                const taxIn = parsePrice(japanTaxInRow[colIndex]);
+                const taxEx = parsePrice(japanTaxExRow[colIndex]);
+                japanDataStore[`${model}_${capacity}`] = { taxIn, taxEx };
+            }
+        }
+
+        // parse each country row
+        dataRows.forEach(row => {
+            const displayName = row[0] ? String(row[0]).trim() : '';
+            const dataType = row[1] ? String(row[1]).trim() : '';
+            if (!displayName || !dataType) return;
+
+            // --- 国名抽出 ---
+            const countryKeywords = ['日本','アメリカ','香港','韓国','カナダ','UAE','マレーシア','ベトナム','オーストラリア','シンガポール','台湾','ニュージーランド','フィリピン','タイ','インド','中国'];
+            let countryName = '';
+            for (const keyword of countryKeywords) {
+                if (displayName.includes(keyword)) { countryName = keyword; break; }
+            }
+            if (!countryName) return;
+
+            if (dataType.includes('日本価格(税込)')) {
+                for (const colIndex in columnMap) {
+                    const { model, capacity } = columnMap[colIndex];
+                    const prices = japanDataStore[`${model}_${capacity}`];
+                    if (prices && prices.taxEx !== null) {
+                        allParsedData.push({
+                            country: '日本', model, capacity,
+                            price: prices.taxEx,
+                            japanPrice: prices.taxEx,
+                            japanPriceTaxIn: prices.taxIn,
+                            exchangeRate: null, taxRate: japanTaxRate, localPrice: prices.taxIn,
+                            flag: japanFlag, currencySymbol: japanCurrencySymbol
+                        });
+                    }
+                }
+            } else if (dataType.includes('価格(日本円換算)')) {
+                const exchangeRate = row[14] ? String(row[14]).trim() : null;
+                const taxRate = parsePrice(row[15]);
+                const flag = row[29] ? String(row[29]).trim() : '';
+                const currencySymbol = row[30] ? String(row[30]).trim() : '';
+
+                for (const colIndex in columnMap) {
+                    const { model, capacity } = columnMap[colIndex];
+                    const overseasPriceYen = parsePrice(row[colIndex]);
+                    const localPriceCol = parseInt(colIndex, 10) + 15;
+                    const localPrice = row[localPriceCol] ? String(row[localPriceCol]).trim() : null;
+                    const japanPrices = japanDataStore[`${model}_${capacity}`];
+
+                    if (overseasPriceYen !== null && japanPrices) {
+                        allParsedData.push({
+                            country: countryName, model, capacity,
+                            price: overseasPriceYen,
+                            japanPrice: japanPrices.taxEx,
+                            japanPriceTaxIn: japanPrices.taxIn,
+                            exchangeRate, taxRate, localPrice,
+                            flag, currencySymbol
+                        });
+                    }
+                }
+            }
+        });
+
+        // render model buttons
+        const modelSelector = document.getElementById('model-selector');
+        modelSelector.innerHTML = '';
+        Object.keys(modelCapacityMap).forEach(model => {
+            const btn=document.createElement('button');
+            btn.textContent=model;
+            btn.className='model-selector-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
+            btn.addEventListener('click',() => selectModel(model, btn));
+            modelSelector.appendChild(btn);
+        });
+
+        if(modelSelector.children.length === 0) showError('表示できるモデルデータがありません。');
+
+    } catch (e) {
+        console.error(e);
+        showError(`データ取得または処理に失敗しました。 エラー: ${e.message}`);
+    }
+}
+
+/* ---- Event listeners (menu etc) ---- */
+function setupEventListeners() {
+    const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownId = this.getAttribute('data-dropdown-toggle');
+            const dropdownMenu = document.getElementById(dropdownId);
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                if (menu.id !== dropdownId) menu.classList.add('hidden');
+            });
+            dropdownMenu.classList.toggle('hidden');
+        });
+    });
+
+    window.addEventListener('click', function(event) {
+        if (!event.target.closest('.js-dropdown')) {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => menu.classList.add('hidden'));
+        }
+    });
+
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
     }
 
-    // ページ読み込み時に取得
-    fetchSheetData();
-  </script>
+    const detailsElements = document.querySelectorAll('#mobile-menu details');
+    detailsElements.forEach(details => {
+        details.addEventListener('toggle', function() {
+            if (this.open) {
+                detailsElements.forEach(otherDetails => {
+                    if (otherDetails !== this && otherDetails.open) otherDetails.removeAttribute('open');
+                });
+            }
+        });
+    });
+}
+
+/* ---- 初期化 ---- */
+document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+    initTokenClient();
+
+    // 自動で認証トークンを取りに行く（初回でポップアップが出ます）
+    // もし望まない場合はこの行をコメントアウトして、ボタン押下等で呼ぶようにしてください.
+    tokenClient.requestAccessToken();
+});
+</script>
 </body>
 </html>
