@@ -478,7 +478,7 @@ async function initializePage(){
 
     try{
         debugLog('Starting data fetch...');
-        const response=await fetchWithRetry(PROXY_URL);
+        const response=await fetchWithRetry(PROXY_SERVICES);
         const csvText=await response.text();
         
         debugLog('CSV text received, length:', csvText.length);
