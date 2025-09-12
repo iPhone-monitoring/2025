@@ -1,1 +1,145 @@
 
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>海外価格 - iPhone相場</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* 既存のスタイルはそのまま */
+body { font-family: 'Inter', 'Noto Sans JP', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+main { flex-grow: 1; }
+.active-btn { background-color:#2563eb !important; color:white !important; border-color: #2563eb !important;
+box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); }
+#capacity-selector:not(.visible){ display:none; }
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
+details[open] summary svg { transform: rotate(180deg); }
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<!-- ここにヘッダー、メイン、フッターは元コードと同じ -->
+<main class="container mx-auto px-6 py-8 md:py-12">
+<h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
+<div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
+    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
+</div>
+<div class="mb-10">
+    <h2 class="text-2xl font-semibold text-slate-700 mb-4">
+        実質価格ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
+    </h2>
+    <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
+        <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
+    </div>
+</div>
+<div id="cards-section" class="mb-10 hidden">
+    <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
+    <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
+</div>
+</main>
+
+<footer class="bg-slate-800 text-white mt-auto">
+<div class="container mx-auto px-6 py-8 text-center">
+<p>&copy; 2025 iPhone相場. All rights reserved.</p>
+</div>
+</footer>
+
+<script>
+// ここからJavaScript
+const DROPBOX_CSV_URL = 'https://www.dropbox.com/scl/fi/ls2rcgkx68xqx31mgqs40/overseas-prices.csv?rlkey=wddtnl73jgqgbwtwcw0s7wagx&dl=1';
+const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`;
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_GAS_ID/exec'; // GASウェブアプリのURL
+
+let allParsedData = [];
+let modelCapacityMap = {};
+
+function isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
+}
+
+async function fetchCSV() {
+    const url = isMobile() ? GAS_URL : PROXY_URL;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('CSV取得に失敗しました');
+    if (isMobile()) {
+        // GASはJSONを返す想定
+        const data = await res.json();
+        return data; // JSON形式の配列
+    } else {
+        // PCはCSV文字列
+        const text = await res.text();
+        return text.trim().replace(/\r/g,'').split('\n').map(r=>r.split(','));
+    }
+}
+
+// --- parsePrice, formatPrice, formatExchangeRate, getDiffColor, renderContent など既存関数はそのまま ---
+// 元コードのままコピーすればOK
+
+async function initializePage(){
+    const modelSelector=document.getElementById('model-selector');
+    const showError=msg=>{ document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
+    try{
+        const csvOrJson = await fetchCSV();
+
+        let rows;
+        if (isMobile()) {
+            // JSON -> rowsに変換
+            rows = csvOrJson; 
+        } else {
+            rows = csvOrJson;
+        }
+
+        if (rows.length < 3) throw new Error('CSVデータが不正です。');
+
+        // --- 以下、既存のCSV解析とmodelCapacityMap作成ロジック ---
+        const header = rows[0];
+        const capacityHeader = rows[1];
+        
+        const columnMap = {}; 
+        let currentModel = null;
+        for (let i = 2; i <= 15; i++) { 
+            const modelCell = header[i] ? header[i].trim() : '';
+            const capacityCell = capacityHeader[i] ? capacityHeader[i].trim() : '';
+            if (modelCell) currentModel = modelCell;
+            if (currentModel && (capacityCell.endsWith('GB') || capacityCell.endsWith('TB'))) {
+                columnMap[i] = { model: currentModel, capacity: capacityCell };
+                if (!modelCapacityMap[currentModel]) modelCapacityMap[currentModel] = [];
+                if (!modelCapacityMap[currentModel].includes(capacityCell)) modelCapacityMap[currentModel].push(capacityCell);
+            }
+        }
+
+        // --- 既存のallParsedData作成ロジックをここにコピー --- 
+        // 端末による処理分岐はfetchCSV()で済ませているので解析部分はそのまま
+
+        // モデルボタン生成
+        Object.keys(modelCapacityMap).forEach(model=>{
+            const btn=document.createElement('button');
+            btn.textContent=model;
+            btn.className='model-selector-btn px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
+            btn.addEventListener('click',() => selectModel(model, btn));
+            modelSelector.appendChild(btn);
+        });
+
+        if(modelSelector.children.length === 0) showError('表示できるモデルデータがありません。');
+
+    } catch(e){
+        console.error(e);
+        showError(`データ取得または処理に失敗しました。<br>エラー: ${e.message}`);
+    }
+}
+
+function setupEventListeners() {
+    // 元コードのドロップダウン、モバイルメニュー制御など
+    // そのままコピー
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage();
+    setupEventListeners();
+});
+</script>
+</body>
+</html>
