@@ -1,83 +1,108 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>海外価格 - iPhone相場</title>
-<style>
-body { font-family: sans-serif; padding: 20px; background:#f0f0f0;}
-button { margin: 2px; padding: 4px 8px;}
-.active { background: #2563eb; color: white;}
-.card { background:white; padding:10px; margin:5px; border-radius:6px; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海外価格比較 - iPhone相場</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+        button { margin: 4px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
+        button.active { background-color: #2563eb; color: white; }
+        .card { background: white; padding: 10px; margin: 5px 0; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .card h3 { margin: 0 0 8px; font-size: 16px; }
+        .card p { margin: 0; font-size: 14px; }
+    </style>
 </head>
 <body>
 
 <h1>海外価格比較</h1>
+<p>モデルと容量を選択してください。</p>
+
 <div id="model-selector"></div>
 <div id="capacity-selector"></div>
 <div id="ranking-container"></div>
 
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso/pub?output=csv';
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=1368139795&single=true&output=csv';
+    let allData = [];
+    let modelCapacityMap = {};
 
-let allData = [];
-let modelCapacityMap = {};
+    function parsePrice(str) {
+        return parseFloat(str.replace(/[^0-9.]/g, '')) || 0;
+    }
 
-function parsePrice(str){ return parseFloat(str.replace(/[^0-9.]/g,'')) || 0; }
+    async function loadCSV() {
+        const res = await fetch(CSV_URL);
+        const text = await res.text();
+        const rows = text.trim().split('\n').map(row => row.split(','));
 
-async function loadCSV(){
-    const res = await fetch(CSV_URL);
-    const text = await res.text();
-    const rows = text.trim().split('\n').map(r=>r.split(','));
+        const header = rows[0];
+        const capacityHeader = rows[1];
 
-    const header = rows[0];
-    const capacityHeader = rows[1];
+        let currentModel = null;
+        for (let i = 2; i < header.length; i++) {
+            if (header[i]) currentModel = header[i].trim();
+            if (currentModel && (capacityHeader[i].endsWith('GB') || capacityHeader[i].endsWith('TB'))) {
+                if (!modelCapacityMap[currentModel]) modelCapacityMap[currentModel] = [];
+                const cap = capacityHeader[i].trim();
+                if (!modelCapacityMap[currentModel].includes(cap)) modelCapacityMap[currentModel].push(cap);
+            }
+        }
 
-    // モデル・容量マップ作成
-    let currentModel=null;
-    for(let i=2;i<header.length;i++){
-        if(header[i]) currentModel=header[i].trim();
-        if(currentModel && (capacityHeader[i].endsWith('GB')||capacityHeader[i].endsWith('TB'))){
-            if(!modelCapacityMap[currentModel]) modelCapacityMap[currentModel]=[];
-            const cap = capacityHeader[i].trim();
-            if(!modelCapacityMap[currentModel].includes(cap)) modelCapacityMap[currentModel].push(cap);
+        for (const row of rows.slice(2)) {
+            const country = row[0];
+            for (const colIndex in modelCapacityMap) {
+                const model = colIndex;
+                modelCapacityMap[model].forEach((capacity, i) => {
+                    const price = parsePrice(row[i + 2]);
+                    if (price > 0) {
+                        allData.push({ country, model, capacity, price });
+                    }
+                });
+            }
+        }
+
+        const modelDiv = document.getElementById('model-selector');
+        for (const model in modelCapacityMap) {
+            const btn = document.createElement('button');
+            btn.textContent = model;
+            btn.addEventListener('click', () => selectModel(model, btn));
+            modelDiv.appendChild(btn);
         }
     }
 
-    // データ格納（簡易）
-    for(const row of rows.slice(2)){
-        const country=row[0]; 
-        for(const colIndex in modelCapacityMap){
-            // 簡易サンプルとして値を1列目のみ
-        }
+    function selectModel(model, btn) {
+        document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const capDiv = document.getElementById('capacity-selector');
+        capDiv.innerHTML = '';
+        modelCapacityMap[model].forEach(cap => {
+            const b = document.createElement('button');
+            b.textContent = cap;
+            b.addEventListener('click', () => renderRanking(model, cap));
+            capDiv.appendChild(b);
+        });
     }
 
-    // モデルボタン作成
-    const modelDiv=document.getElementById('model-selector');
-    for(const model in modelCapacityMap){
-        const btn=document.createElement('button');
-        btn.textContent=model;
-        btn.addEventListener('click',()=>selectModel(model, btn));
-        modelDiv.appendChild(btn);
+    function renderRanking(model, capacity) {
+        const filteredData = allData.filter(item => item.model === model && item.capacity === capacity);
+        const sortedData = filteredData.sort((a, b) => a.price - b.price);
+
+        const container = document.getElementById('ranking-container');
+        container.innerHTML = '';
+        sortedData.forEach((item, index) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <h3>${index + 1}. ${item.country}</h3>
+                <p>価格: ¥${item.price.toLocaleString()}</p>
+            `;
+            container.appendChild(card);
+        });
     }
-}
 
-function selectModel(model, btn){
-    document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-
-    const capDiv = document.getElementById('capacity-selector');
-    capDiv.innerHTML='';
-    modelCapacityMap[model].forEach(cap=>{
-        const b = document.createElement('button');
-        b.textContent=cap;
-        b.addEventListener('click',()=> alert(`ここで ${model} ${cap} の表示処理`));
-        capDiv.appendChild(b);
-    });
-}
-
-loadCSV();
+    loadCSV();
 </script>
 
 </body>
