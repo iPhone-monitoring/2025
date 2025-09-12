@@ -10,9 +10,9 @@
 <button id="authorize-btn">スプレッドシート読み込み</button>
 
 <script>
-const CLIENT_ID = '356906835635-q2le5c9jjcugnvsbn7mmghpoh2g2f3cq.apps.googleusercontent.com'; // ここを置き換え
-const SPREADSHEET_ID = '1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso';                  // ここを置き換え
-const RANGE = 'iPhone17-overseas-prices!A1:AE19';                                 // 読みたい範囲
+const CLIENT_ID = '356906835635-q2le5c9jjcugnvsbn7mmghpoh2g2f3cq.apps.googleusercontent.com';
+const SPREADSHEET_ID = '1N9mC-I7DVubvXPKxyu0yR2M2u2re743u-u8IPAVMwso';
+const RANGE = 'iPhone17-overseas-prices!A1:AE19'; // 読みたい範囲
 
 function initClient() {
     gapi.client.init({
@@ -20,8 +20,10 @@ function initClient() {
         clientId: CLIENT_ID,
         scope: "https://www.googleapis.com/auth/spreadsheets.readonly"
     }).then(() => {
+        console.log('GAPI client initialized');
         document.getElementById('authorize-btn').addEventListener('click', () => {
-            gapi.auth2.getAuthInstance().signIn().then(loadSheet);
+            const authInstance = gapi.auth2.getAuthInstance();
+            authInstance.signIn().then(loadSheet).catch(err => console.error(err));
         });
     });
 }
@@ -32,12 +34,13 @@ function loadSheet() {
         range: RANGE
     }).then(response => {
         console.log('取得データ:', response.result.values);
-        alert('データをコンソールに表示しました');
-    }, err => {
+        alert('コンソールにデータを出力しました');
+    }).catch(err => {
         console.error('取得失敗', err);
     });
 }
 
+// gapiを読み込んだら初期化
 gapi.load('client:auth2', initClient);
 </script>
 </body>
