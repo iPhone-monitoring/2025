@@ -107,6 +107,8 @@ const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`
 
 let allParsedData = [];
 let modelCapacityMap = {};
+// 新しい国をCSVに追加した場合、ここに国名と国旗を追加すれば自動で対応します。
+const FLAG_MAP = {'日本': '🇯🇵', 'アメリカ': '🇺🇸', '香港': '🇭🇰', '韓国': '🇰🇷'};
 
 function parsePrice(str) {
     if(!str||typeof str!=='string') return null;
@@ -150,7 +152,7 @@ function renderContent(model,capacity){
         li.innerHTML=`
             <div class="flex items-center">
                 <span class="text-xl font-bold w-8 text-center ${rankColor}">${rank}</span>
-                <span class="ml-4 text-slate-800 font-semibold text-lg">${item.displayName}</span>
+                <span class="ml-4 text-slate-800 font-semibold text-lg">${FLAG_MAP[item.country] || ''} ${item.country}</span>
             </div>
             <div class="text-right">
                 <span class="text-lg font-bold text-slate-800">${formatPrice(item.price)}</span>
@@ -162,40 +164,45 @@ function renderContent(model,capacity){
     // --- 国別カード ---
     cardsSection.classList.remove('hidden');
     cardsContainer.innerHTML='';
-    const displayOrder = ['日本', 'アメリカ', '香港', '韓国'];
+    
+    const rankedCountryNames = rankingData.map(item => item.country);
+    const displayOrder = ['日本', ...rankedCountryNames.filter(name => name !== '日本')];
     
     displayOrder.forEach(cn=>{
         const item=filteredData.find(d=>d.country===cn);
         if(!item) return;
 
         const card=document.createElement('div'); card.className='bg-white p-5 rounded-lg shadow-md flex flex-col';
-        
+        const cardTitle = `${FLAG_MAP[item.country] || ''} ${item.country}`;
+
         if(item.country==='日本'){
             card.innerHTML=`
-                <h3 class="text-xl font-bold text-slate-800 mb-4">${item.displayName}</h3>
-                <div class="border-y py-3 my-3 text-center">
-                    <div>
+                <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
+                <div class="grid grid-cols-3 gap-2 text-center py-3">
+                    <div class="col-span-3">
                         <p class="text-xs text-slate-500">税率</p>
                         <p class="font-semibold text-sm text-slate-700">${item.taxRate !== null ? item.taxRate + '%' : 'N/A'}</p>
                     </div>
                 </div>
-                <dl class="space-y-3 text-sm">
+                <dl class="space-y-3 text-sm border-y py-3 my-3">
                     <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税込)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPriceTaxIn)}</dd></div>
                     <div class="flex justify-between items-center"><dt class="text-slate-600">日本円価格(税抜)</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.japanPrice)}</dd></div>
                 </dl>
-                <p class="text-xs mt-4 text-slate-500 border-t pt-3">※ランキング比較用の価格は税抜です。</p>
+                <div class="mt-auto">
+                    <p class="text-xs text-slate-500">※ランキング比較用の価格は税抜です。</p>
+                </div>
             `;
         } else {
             const diff=item.price - (item.japanPrice||0);
             const diffText=diff>=0?`+${Math.round(diff).toLocaleString()}円`:`${Math.round(diff).toLocaleString()}円`;
-            const japanDisplayName = filteredData.find(d => d.country === '日本')?.displayName || '🇯🇵 日本';
-            const otokuText=diff<0?`${item.displayName}のほうがお得`:`${japanDisplayName}のほうがお得`;
+            const japanDisplayName = `${FLAG_MAP['日本'] || ''} 日本`;
+            const otokuText=diff<0?`${cardTitle}のほうがお得`:`${japanDisplayName}のほうがお得`;
             const formattedLocalPrice = item.localPrice ? Number(item.localPrice).toLocaleString() : 'N/A';
             const currencySymbol = {'アメリカ':'$','香港':'HK$','韓国':'₩'}[item.country] || '';
 
             card.innerHTML=`
-                <h3 class="text-xl font-bold text-slate-800 mb-4">${item.displayName}</h3>
-                <div class="grid grid-cols-3 gap-2 text-center border-y py-3 my-3">
+                <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
+                <div class="grid grid-cols-3 gap-2 text-center py-3">
                     <div>
                         <p class="text-xs text-slate-500">為替</p>
                         <p class="font-semibold text-sm text-slate-700">${item.exchangeRate ? item.exchangeRate + '円' : 'N/A'}</p>
@@ -209,12 +216,16 @@ function renderContent(model,capacity){
                         <p class="font-semibold text-sm text-slate-700">${currencySymbol}${formattedLocalPrice}</p>
                     </div>
                 </div>
-                <dl class="space-y-3 text-sm">
+                <dl class="space-y-3 text-sm border-y py-3 my-3">
                     <div class="flex justify-between items-center"><dt class="text-slate-600">日本円換算価格</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.price)}</dd></div>
                     <div class="flex justify-between items-center"><dt class="text-slate-600">日本価格(税抜)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPrice)}</dd></div>
-                    <div class="flex justify-between items-center border-t pt-3 mt-3"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
                 </dl>
-                <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>
+                <div class="mt-auto">
+                    <dl class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
+                    </dl>
+                    <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>
+                </div>
             `;
         }
         cardsContainer.appendChild(card);
@@ -297,14 +308,20 @@ async function initializePage(){
             const displayName = row[0] ? row[0].trim() : '';
             const dataType = row[1] ? row[1].trim() : '';
             if (!displayName || !dataType) return;
+            
+            // 絵文字を無視して国名テキストのみを抽出
+            const countryNameMatch = displayName.match(/[^\uD83C-\uDBFF\uDC00-\uDFFF\s].*/);
+            const countryName = countryNameMatch ? countryNameMatch[0].trim() : '';
+            if (!countryName) return;
+
 
             if (dataType.includes('日本価格(税込)')) {
-                for (const colIndex in columnMap) {
+                 for (const colIndex in columnMap) {
                     const { model, capacity } = columnMap[colIndex];
                     const prices = japanDataStore[`${model}_${capacity}`];
                     if (prices && prices.taxEx !== null) {
                          allParsedData.push({ 
-                            country: '日本', displayName, model, capacity, 
+                            country: '日本', model, capacity, 
                             price: prices.taxEx, 
                             japanPrice: prices.taxEx, 
                             japanPriceTaxIn: prices.taxIn,
@@ -314,9 +331,6 @@ async function initializePage(){
                 }
             } 
             else if (dataType.includes('価格(日本円換算)')) {
-                const countryName = displayName.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
-                if (!countryName) return;
-                
                 const exchangeRate = row[14] ? row[14].trim() : null;
                 const taxRate = parsePrice(row[15]);
 
@@ -329,7 +343,7 @@ async function initializePage(){
                     
                     if (overseasPriceYen !== null && japanPrices) {
                         allParsedData.push({
-                            country: countryName, displayName, model, capacity,
+                            country: countryName, model, capacity,
                             price: overseasPriceYen,
                             japanPrice: japanPrices.taxEx,
                             japanPriceTaxIn: japanPrices.taxIn,
