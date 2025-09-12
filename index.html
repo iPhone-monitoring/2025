@@ -24,6 +24,10 @@
         summary {
             list-style: none;
         }
+        /* アコーディオンが開いたときにアイコンを回転させます */
+        details[open] summary svg {
+            transform: rotate(180deg);
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -58,12 +62,37 @@
                     </div>
                 </div>
             </nav>
-            <!-- 修正点: スマホ表示用の `block` クラスを追加 -->
-            <button class="block md:hidden text-slate-600">
+            <!-- ハンバーガーメニューボタン -->
+            <button id="mobile-menu-button" class="block md:hidden text-slate-600">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
                 </svg>
             </button>
+        </div>
+        <!-- モバイルメニュー -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+            <a href="index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
+            <details class="w-full">
+                <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                    <span>iPhone 17</span>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <div class="bg-slate-50">
+                    <a href="iPhone17/overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
+                    <a href="iPhone17/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                    <a href="iPhone17/market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+                </div>
+            </details>
+             <details class="w-full">
+                <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                    <span>過去データ</span>
+                    <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </summary>
+                <div class="bg-slate-50">
+                    <a href="past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                    <a href="past-data/market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+                </div>
+            </details>
         </div>
     </header>
 
@@ -81,8 +110,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- デスクトップ用ドロップダウンの制御 ---
             const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
-
             dropdownToggles.forEach(toggle => {
                 toggle.addEventListener('click', function(event) {
                     event.stopPropagation(); // 親要素へのクリックイベントの伝播を停止
@@ -90,7 +119,7 @@
                     const dropdownMenu = document.getElementById(dropdownId);
                     
                     // 他の開いているドロップダウンを閉じる
-                    document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
+                    document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
                         if (menu.id !== dropdownId) {
                             menu.classList.add('hidden');
                         }
@@ -100,18 +129,42 @@
                 });
             });
 
-            // ドキュメント全体をクリックしたときにドロップダウンを閉じる
+            // --- ドキュメント全体をクリックしたときにドロップダウンを閉じる ---
             window.addEventListener('click', function(event) {
                 // '.js-dropdown' の外側がクリックされたか確認
                 if (!event.target.closest('.js-dropdown')) {
-                    document.querySelectorAll('[id$="Dropdown"]').forEach(menu => {
+                    document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
                         menu.classList.add('hidden');
                     });
                 }
+            });
+
+            // --- モバイルメニューの制御 ---
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenuButton && mobileMenu) {
+                mobileMenuButton.addEventListener('click', function(event) {
+                    event.stopPropagation();
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // --- モバイルメニュー内のアコーディオン制御 ---
+            const detailsElements = document.querySelectorAll('#mobile-menu details');
+            detailsElements.forEach(details => {
+                details.addEventListener('toggle', function() {
+                    if (this.open) {
+                        // 他の開いているアコーディオンを閉じる
+                        detailsElements.forEach(otherDetails => {
+                            if (otherDetails !== this && otherDetails.open) {
+                                otherDetails.removeAttribute('open');
+                            }
+                        });
+                    }
+                });
             });
         });
     </script>
 
 </body>
 </html>
-
