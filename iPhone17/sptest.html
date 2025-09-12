@@ -1,32 +1,44 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>海外価格 - iPhone相場</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-/* 既存のスタイルはそのまま */
-body { font-family: 'Inter', 'Noto Sans JP', sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
-main { flex-grow: 1; }
-.active-btn { background-color:#2563eb !important; color:white !important; border-color: #2563eb !important;
-box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); }
-#capacity-selector:not(.visible){ display:none; }
-summary::-webkit-details-marker { display: none; }
-summary { list-style: none; }
-details[open] summary svg { transform: rotate(180deg); }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>海外価格 - iPhone相場</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', 'Noto Sans JP', sans-serif; display:flex; flex-direction:column; min-height:100vh; }
+        main { flex-grow: 1; }
+        .active-btn { background-color:#2563eb !important; color:white !important; border-color:#2563eb !important; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); }
+        #capacity-selector:not(.visible){ display:none; }
+        summary::-webkit-details-marker { display:none; }
+        summary { list-style:none; }
+        details[open] summary svg { transform:rotate(180deg); }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-<!-- ここにヘッダー、メイン、フッターは元コードと同じ -->
+<header class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+        <nav class="hidden md:flex items-center space-x-6">
+            <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
+        </nav>
+        <button id="mobile-menu-button" class="block md:hidden text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+    </div>
+</header>
+
 <main class="container mx-auto px-6 py-8 md:py-12">
 <h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
+
 <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
     <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
     <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
 </div>
+
 <div class="mb-10">
     <h2 class="text-2xl font-semibold text-slate-700 mb-4">
         実質価格ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
@@ -35,6 +47,7 @@ details[open] summary svg { transform: rotate(180deg); }
         <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
     </div>
 </div>
+
 <div id="cards-section" class="mb-10 hidden">
     <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
     <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
@@ -42,79 +55,54 @@ details[open] summary svg { transform: rotate(180deg); }
 </main>
 
 <footer class="bg-slate-800 text-white mt-auto">
-<div class="container mx-auto px-6 py-8 text-center">
-<p>&copy; 2025 iPhone相場. All rights reserved.</p>
-</div>
+    <div class="container mx-auto px-6 py-8 text-center">
+        <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+    </div>
 </footer>
 
 <script>
-// ここからJavaScript
-const DROPBOX_CSV_URL = 'https://www.dropbox.com/scl/fi/ls2rcgkx68xqx31mgqs40/overseas-prices.csv?rlkey=wddtnl73jgqgbwtwcw0s7wagx&dl=1';
-const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`;
-const GAS_URL = 'https://script.google.com/macros/s/YOUR_GAS_ID/exec'; // GASウェブアプリのURL
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzShs2zrOKvP_2GjXQpmc55HBHQabzT_qw8E29Q4hf6n4mPIzKi_wCHs7aMIg2pR70e/exec';
 
 let allParsedData = [];
 let modelCapacityMap = {};
 
-function isMobile() {
-    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
-}
+function parsePrice(str) { if(!str||typeof str!=='string') return null; const n=parseFloat(str.replace(/[^0-9.]/g,'')); return isNaN(n)?null:n; }
+function formatPrice(n){ return n===null?'N/A':'¥'+Math.round(n).toLocaleString(); }
+function getDiffColor(diff){ if(diff===null)return 'text-slate-500'; if(diff<0)return 'text-red-600'; if(diff>0)return 'text-green-600'; return 'text-slate-500'; }
+function formatExchangeRate(rateStr) { if(!rateStr) return 'N/A'; const rate=parseFloat(rateStr); if(isNaN(rate)) return 'N/A'; return rate>=1?rate.toFixed(2):rate.toFixed(3); }
 
-async function fetchCSV() {
-    const url = isMobile() ? GAS_URL : PROXY_URL;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('CSV取得に失敗しました');
-    if (isMobile()) {
-        // GASはJSONを返す想定
-        const data = await res.json();
-        return data; // JSON形式の配列
-    } else {
-        // PCはCSV文字列
-        const text = await res.text();
-        return text.trim().replace(/\r/g,'').split('\n').map(r=>r.split(','));
+async function fetchData() {
+    for (let i=0;i<3;i++){
+        try{
+            const res = await fetch(GAS_URL);
+            if(!res.ok) throw new Error('GAS取得失敗');
+            return await res.json();
+        }catch(e){
+            console.warn(`fetch attempt ${i+1} failed`, e.message);
+            await new Promise(r=>setTimeout(r,1000));
+        }
     }
+    throw new Error('GAS取得に3回失敗しました');
 }
 
-// --- parsePrice, formatPrice, formatExchangeRate, getDiffColor, renderContent など既存関数はそのまま ---
-// 元コードのままコピーすればOK
-
-async function initializePage(){
+async function initializePage() {
     const modelSelector=document.getElementById('model-selector');
     const showError=msg=>{ document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
-    try{
-        const csvOrJson = await fetchCSV();
 
-        let rows;
-        if (isMobile()) {
-            // JSON -> rowsに変換
-            rows = csvOrJson; 
-        } else {
-            rows = csvOrJson;
-        }
+    try {
+        const data = await fetchData();
+        if (!Array.isArray(data) || data.length === 0) throw new Error('データが空です');
 
-        if (rows.length < 3) throw new Error('CSVデータが不正です。');
+        allParsedData = data;
 
-        // --- 以下、既存のCSV解析とmodelCapacityMap作成ロジック ---
-        const header = rows[0];
-        const capacityHeader = rows[1];
-        
-        const columnMap = {}; 
-        let currentModel = null;
-        for (let i = 2; i <= 15; i++) { 
-            const modelCell = header[i] ? header[i].trim() : '';
-            const capacityCell = capacityHeader[i] ? capacityHeader[i].trim() : '';
-            if (modelCell) currentModel = modelCell;
-            if (currentModel && (capacityCell.endsWith('GB') || capacityCell.endsWith('TB'))) {
-                columnMap[i] = { model: currentModel, capacity: capacityCell };
-                if (!modelCapacityMap[currentModel]) modelCapacityMap[currentModel] = [];
-                if (!modelCapacityMap[currentModel].includes(capacityCell)) modelCapacityMap[currentModel].push(capacityCell);
-            }
-        }
+        // モデル・容量情報を整理
+        modelCapacityMap = {};
+        data.forEach(item => {
+            if (!modelCapacityMap[item.model]) modelCapacityMap[item.model] = [];
+            if (!modelCapacityMap[item.model].includes(item.capacity)) modelCapacityMap[item.model].push(item.capacity);
+        });
 
-        // --- 既存のallParsedData作成ロジックをここにコピー --- 
-        // 端末による処理分岐はfetchCSV()で済ませているので解析部分はそのまま
-
-        // モデルボタン生成
+        // モデルボタン作成
         Object.keys(modelCapacityMap).forEach(model=>{
             const btn=document.createElement('button');
             btn.textContent=model;
@@ -125,21 +113,93 @@ async function initializePage(){
 
         if(modelSelector.children.length === 0) showError('表示できるモデルデータがありません。');
 
-    } catch(e){
+    } catch(e) {
         console.error(e);
-        showError(`データ取得または処理に失敗しました。<br>エラー: ${e.message}`);
+        showError(`データ取得に失敗しました。<br>エラー: ${e.message}`);
     }
 }
 
-function setupEventListeners() {
-    // 元コードのドロップダウン、モバイルメニュー制御など
-    // そのままコピー
+function selectModel(model, btnElement) {
+    document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active-btn'));
+    btnElement.classList.add('active-btn');
+
+    const capacityContainer = document.getElementById('capacity-selector');
+    capacityContainer.classList.add('visible');
+    capacityContainer.innerHTML = '';
+
+    const capacities = modelCapacityMap[model] || [];
+    capacities.forEach(cap => {
+        const btn = document.createElement('button');
+        btn.textContent = cap;
+        btn.className = 'capacity-selector-btn px-3 py-1.5 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.capacity-selector-btn').forEach(b => b.classList.remove('active-btn'));
+            btn.classList.add('active-btn');
+            renderContent(model, cap);
+        });
+        capacityContainer.appendChild(btn);
+    });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    initializePage();
-    setupEventListeners();
-});
+// レンダリング関数（元の renderContent を組み込む）
+function renderContent(model, capacity) {
+    const rankingContainer = document.getElementById('ranking-container');
+    const cardsContainer = document.getElementById('country-cards-container');
+    const cardsSection = document.getElementById('cards-section');
+    document.getElementById('ranking-model-name').textContent = model;
+    document.getElementById('ranking-capacity-name').textContent = capacity;
+
+    const filteredData = allParsedData.filter(item => item.model===model && item.capacity===capacity);
+    if (filteredData.length === 0) {
+        rankingContainer.innerHTML='<p class="text-center p-8 text-slate-500">この条件の表示データがありません。</p>';
+        cardsContainer.innerHTML='';
+        cardsSection.classList.add('hidden');
+        return;
+    }
+
+    // 中国除外
+    const chinaData = filteredData.find(d=>d.country==='中国');
+    const otherData = filteredData.filter(d=>d.country!=='中国');
+
+    // ランキング
+    const rankingData = [...otherData].sort((a,b)=>a.price-b.price);
+    rankingContainer.innerHTML='';
+    const ol = document.createElement('ol'); ol.className='space-y-4';
+    rankingData.forEach((item,index)=>{
+        const li=document.createElement('li');
+        const rank=index+1;
+        let bg='bg-slate-50'; let rankColor='text-slate-500';
+        if(rank===1){bg='bg-yellow-100';rankColor='text-yellow-600';}
+        else if(rank===2){bg='bg-slate-200';rankColor='text-slate-600';}
+        else if(rank===3){bg='bg-orange-100';rankColor='text-orange-600';}
+
+        li.className=`p-4 rounded-lg flex justify-between items-center ${bg} shadow-sm`;
+        li.innerHTML=`<span class="${rankColor} font-semibold mr-4">${rank}</span>
+        <span class="flex-1">${item.country}</span>
+        <span class="font-semibold">${formatPrice(item.price)}</span>`;
+        ol.appendChild(li);
+    });
+    rankingContainer.appendChild(ol);
+
+    // カード表示
+    cardsContainer.innerHTML='';
+    otherData.forEach(item=>{
+        const div=document.createElement('div');
+        div.className='bg-white rounded-lg shadow-md p-4';
+        div.innerHTML=`
+            <h3 class="font-semibold text-lg mb-2">${item.country}</h3>
+            <p>価格: <span class="font-bold">${formatPrice(item.price)}</span></p>
+            <p>税率: ${item.tax || 'N/A'}</p>
+            <p>消費税後: ${item.taxIncluded?formatPrice(item.taxIncluded):'N/A'}</p>
+            <p>為替レート: ${item.exchangeRate?formatExchangeRate(item.exchangeRate):'N/A'}</p>
+        `;
+        cardsContainer.appendChild(div);
+    });
+    cardsSection.classList.remove('hidden');
+}
+
+document.addEventListener('DOMContentLoaded', () => { initializePage(); });
 </script>
+
 </body>
 </html>
