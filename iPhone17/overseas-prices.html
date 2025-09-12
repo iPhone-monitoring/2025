@@ -72,8 +72,7 @@
     </header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
-<h1 class="text-3xl font-bold text-slate-800 mb-2">海外価格 リアルタイム比較</h1>
-<p class="text-slate-600 mb-6">このデータはDropboxのCSVファイルから自動更新されます。</p>
+<h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
 
 <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
     <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
@@ -82,7 +81,7 @@
 
 <div class="mb-10">
     <h2 class="text-2xl font-semibold text-slate-700 mb-4">
-        価格の安い国ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
+        実質価格ランキング (<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)
     </h2>
     <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
         <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
@@ -130,51 +129,56 @@ function formatExchangeRate(rateStr) {
     }
 }
 
-function renderContent(model,capacity){
-    const rankingContainer=document.getElementById('ranking-container');
-    const cardsContainer=document.getElementById('country-cards-container');
-    const cardsSection=document.getElementById('cards-section');
-    document.getElementById('ranking-model-name').textContent=model;
-    document.getElementById('ranking-capacity-name').textContent=capacity;
+function renderContent(model, capacity) {
+    const rankingContainer = document.getElementById('ranking-container');
+    const cardsContainer = document.getElementById('country-cards-container');
+    const cardsSection = document.getElementById('cards-section');
+    document.getElementById('ranking-model-name').textContent = model;
+    document.getElementById('ranking-capacity-name').textContent = capacity;
 
-    const filteredData=allParsedData.filter(item=>item.model===model && item.capacity===capacity);
+    const filteredData = allParsedData.filter(item => item.model === model && item.capacity === capacity);
 
-    if(filteredData.length===0){
-        rankingContainer.innerHTML='<p class="text-center p-8 text-slate-500">この条件の表示データがありません。</p>';
-        cardsContainer.innerHTML='';
+    if (filteredData.length === 0) {
+        rankingContainer.innerHTML = '<p class="text-center p-8 text-slate-500">この条件の表示データがありません。</p>';
+        cardsContainer.innerHTML = '';
         cardsSection.classList.add('hidden');
         return;
     }
 
-    // --- ランキング ---
-    const rankingData=[...filteredData].sort((a,b)=>a.price - b.price);
-    rankingContainer.innerHTML='';
-    const ol=document.createElement('ol'); ol.className='space-y-4';
-    rankingData.forEach((item,index)=>{
-        const li=document.createElement('li');
-        const rank=index+1;
-        
-        let bgColor='bg-slate-50'; // Default color
-        let rankColor='text-slate-500';
+    // 中国をランキング対象から除外
+    const chinaData = filteredData.find(item => item.country === '中国');
+    const otherCountriesData = filteredData.filter(item => item.country !== '中国');
 
-        if(rank===1) { 
-            bgColor='bg-yellow-100'; 
-            rankColor='text-yellow-600';
-        } else if(rank===2) { 
-            bgColor='bg-slate-200'; 
-            rankColor='text-slate-600';
-        } else if(rank===3) { 
-            bgColor='bg-orange-100'; 
-            rankColor='text-orange-600';
+    // --- ランキング ---
+    const rankingData = [...otherCountriesData].sort((a, b) => a.price - b.price);
+    rankingContainer.innerHTML = '';
+    const ol = document.createElement('ol');
+    ol.className = 'space-y-4';
+    rankingData.forEach((item, index) => {
+        const li = document.createElement('li');
+        const rank = index + 1;
+
+        let bgColor = 'bg-slate-50'; // Default color
+        let rankColor = 'text-slate-500';
+
+        if (rank === 1) {
+            bgColor = 'bg-yellow-100';
+            rankColor = 'text-yellow-600';
+        } else if (rank === 2) {
+            bgColor = 'bg-slate-200';
+            rankColor = 'text-slate-600';
+        } else if (rank === 3) {
+            bgColor = 'bg-orange-100';
+            rankColor = 'text-orange-600';
         }
 
         // 4位以下で日本の場合に背景色を上書き
         if (item.country === '日本' && rank >= 4) {
             bgColor = 'bg-red-100';
         }
-        
-        li.className=`flex items-center justify-between p-3 rounded-md ${bgColor}`;
-        li.innerHTML=`
+
+        li.className = `flex items-center justify-between p-3 rounded-md ${bgColor}`;
+        li.innerHTML = `
             <div class="flex items-center">
                 <span class="text-xl font-bold w-8 text-center ${rankColor}">${rank}</span>
                 <span class="ml-4 text-slate-800 font-semibold text-lg">${item.flag || ''} ${item.country}</span>
@@ -184,21 +188,40 @@ function renderContent(model,capacity){
             </div>`;
         ol.appendChild(li);
     });
+    
+    // ランキングの最下部に中国を追加
+    if (chinaData) {
+        const li = document.createElement('li');
+        li.className = `flex items-center justify-between p-3 rounded-md bg-slate-50`; // 4位以下と同様の表示
+        li.innerHTML = `
+            <div class="flex items-center">
+                <span class="text-xl font-bold w-8 text-center text-slate-500">-</span>
+                <span class="ml-4 text-slate-800 font-semibold text-lg">${chinaData.flag || ''} ${chinaData.country}</span>
+            </div>
+            <div class="text-right">
+                <span class="text-lg font-bold text-slate-800">${formatPrice(chinaData.price)}</span>
+            </div>`;
+        ol.appendChild(li);
+    }
     rankingContainer.appendChild(ol);
 
-    // --- 国別カード (リファクタリング後) ---
+    // --- 国別カード ---
     cardsSection.classList.remove('hidden');
-    cardsContainer.innerHTML='';
-    
+    cardsContainer.innerHTML = '';
+
+    // カードの表示順を定義: 日本 > ランキング順 > 中国
     const rankedCountryNames = rankingData.map(item => item.country);
     const displayOrder = ['日本', ...rankedCountryNames.filter(name => name !== '日本')];
-    
-    displayOrder.forEach(cn=>{
-        const item=filteredData.find(d=>d.country===cn);
-        if(!item) return;
+    if (chinaData) {
+        displayOrder.push('中国');
+    }
 
-        const card=document.createElement('div');
-        card.className='bg-white p-5 rounded-lg shadow-md flex flex-col';
+    displayOrder.forEach(cn => {
+        const item = filteredData.find(d => d.country === cn);
+        if (!item) return;
+
+        const card = document.createElement('div');
+        card.className = 'bg-white p-5 rounded-lg shadow-md flex flex-col';
         const isJapan = item.country === '日本';
         const cardTitle = `${item.flag || ''} ${item.country}`;
 
@@ -226,27 +249,34 @@ function renderContent(model,capacity){
             `<div class="flex justify-between items-center"><dt class="text-slate-600">日本円換算価格</dt><dd class="font-bold text-blue-600 text-base">${formatPrice(item.price)}</dd></div>
              <div class="flex justify-between items-center"><dt class="text-slate-600">日本価格(税抜)</dt><dd class="font-semibold text-slate-800 text-base">${formatPrice(item.japanPrice)}</dd></div>`;
 
-        const diff = isJapan ? null : item.price - (item.japanPrice || 0);
-        const diffText = diff === null ? '' : (diff >= 0 ? `+${Math.round(diff).toLocaleString()}円` : `${Math.round(diff).toLocaleString()}円`);
-        const japanDisplayName = `${rankingData.find(c => c.country === '日本')?.flag || '🇯🇵'} 日本`;
-        const otokuText = diff === null ? '' : (diff < 0 ? `${cardTitle}のほうがお得` : `${japanDisplayName}のほうがお得`);
-
-        const section3HTML = isJapan ?
-            `<p class="text-xs text-slate-500">※こちらは参考価格です。</p>` :
-            `<dl class="space-y-3 text-sm">
-                <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
-             </dl>
-             <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>`;
+        let section3HTML;
+        if (item.country === '中国') {
+            section3HTML = `<p class="text-center text-sm font-semibold text-slate-600">機能に制限があるため除外しています</p>`;
+        } else if (isJapan) {
+            section3HTML = `<p class="text-xs text-slate-500 text-center">※こちらは参考価格です。</p>`;
+        } else {
+            const diff = item.price - (item.japanPrice || 0);
+            const diffText = diff === null ? '' : (diff >= 0 ? `+${Math.round(diff).toLocaleString()}円` : `${Math.round(diff).toLocaleString()}円`);
+            const japanDisplayName = `${rankingData.find(c => c.country === '日本')?.flag || '🇯🇵'} 日本`;
+            const otokuText = diff === null ? '' : (diff < 0 ? `${cardTitle}のほうがお得` : `${japanDisplayName}のほうがお得`);
+            section3HTML = `<div class="w-full">
+                <dl class="text-sm">
+                  <div class="flex justify-between items-center"><dt class="font-semibold text-slate-600">差額</dt><dd class="font-bold text-xl ${getDiffColor(diff)}">${diffText}</dd></div>
+                </dl>
+                <p class="text-center mt-4 text-base font-bold ${getDiffColor(diff)}">${otokuText}！</p>
+            </div>`;
+        }
 
         card.innerHTML = `
             <h3 class="text-xl font-bold text-slate-800 mb-4">${cardTitle}</h3>
             <div class="grid grid-cols-3 gap-2 text-center border-y py-3">${section1HTML}</div>
             <dl class="space-y-3 text-sm py-3 border-b mb-3">${section2HTML}</dl>
-            <div class="mt-auto">${section3HTML}</div>
+            <div class="mt-auto flex-grow flex flex-col items-center justify-center">${section3HTML}</div>
         `;
         cardsContainer.appendChild(card);
     });
 }
+
 
 function selectModel(model, btnElement) {
     document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active-btn'));
@@ -329,7 +359,8 @@ async function initializePage(){
             
             // --- 国名抽出ロジック ---
             let countryName = '';
-            const countryKeywords = ['日本', 'アメリカ', '香港', '韓国', 'カナダ', 'UAE', 'マレーシア', 'ベトナム', 'オーストラリア', 'シンガポール', '台湾', 'ニュージーランド', 'フィリピン', 'タイ', 'インド'];
+            // 中国を追加
+            const countryKeywords = ['日本', 'アメリカ', '香港', '韓国', 'カナダ', 'UAE', 'マレーシア', 'ベトナム', 'オーストラリア', 'シンガポール', '台湾', 'ニュージーランド', 'フィリピン', 'タイ', 'インド', '中国'];
             for (const keyword of countryKeywords) {
                 if (displayName.includes(keyword)) {
                     countryName = keyword;
@@ -426,4 +457,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </body>
 </html>
+
 
