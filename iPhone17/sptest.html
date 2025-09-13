@@ -99,6 +99,7 @@
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=761980576&single=true&output=csv';
+const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(CSV_URL)}`;
 
 let allData = {};
 let modelInfo = {}; // To store periods and capacities for each model
@@ -233,6 +234,24 @@ function selectModel(model, btnElement) {
     if (chartInstance) chartInstance.destroy();
 }
 
+async function fetchWithRetry(url, retries = 3, delay = 1000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`サーバーエラー: ${response.status}`);
+            }
+            return response; // Success
+        } catch (error) {
+            console.error(`Attempt ${i + 1} failed:`, error.message);
+            if (i === retries - 1) {
+                throw error;
+            }
+            await new Promise(res => setTimeout(res, delay));
+        }
+    }
+}
+
 async function initializePage() {
     const modelSelector = document.getElementById('model-selector');
     const showError = msg => { 
@@ -241,7 +260,7 @@ async function initializePage() {
     };
 
     try {
-        const response = await fetch(CSV_URL);
+        const response = await fetchWithRetry(PROXY_URL);
         if (!response.ok) throw new Error('CSV取得エラー: ' + response.statusText);
         const csvText = await response.text();
         const rows = csvText.trim().split(/\r?\n/).map(r => r.split(','));
@@ -317,12 +336,56 @@ async function initializePage() {
 
     } catch (e) {
         console.error(e);
-        showError('データ取得または処理に失敗しました。<br>エラー: ' + e.message);
+        let errorMessage = `データ取得または処理に失敗しました。<br>エラー: ${e.message}`;
+         if (e.message.includes('Failed to fetch')) {
+             errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認してください。`;
+        }
+        showError(errorMessage);
     }
 }
 
+function setupEventListeners() {
+    // デスクトップ用ドロップダウン
+    const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownId = this.getAttribute('data-dropdown-toggle');
+            const dropdownMenu = document.getElementById(dropdownId);
+            
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.add('hidden');
+                }
+            });
+            dropdownMenu.classList.toggle('hidden');
+        });
+    });
+
+    // 他の場所をクリックしたらドロップダウンを閉じる
+    window.addEventListener('click', function(event) {
+        if (!event.target.closest('.js-dropdown')) {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+
+    // モバイルメニューの制御
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     initializePage();
+    setupEventListeners();
 });
 
 </script>
