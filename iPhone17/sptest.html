@@ -85,11 +85,13 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
+    // **FIXED**: Changed how data is mapped to the chart
+    // It now uses the {date, price} objects created during parsing.
     datasets.push({
       label: cap,
-      data: capData.data.map((v,i)=>({
-        x: dayjs(chartData.dates[i], 'MM/DD HH:mm').toDate(),
-        y: v.price
+      data: capData.data.map(point => ({
+        x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
+        y: point.price
       })),
       borderColor: color,
       borderWidth: 2.5,
@@ -101,8 +103,8 @@ function createChart(model, period){
     if(capData.list_price){
       datasets.push({
         label: cap+' 定価',
-        data: capData.data.map((v,i)=>({
-          x: dayjs(chartData.dates[i], 'MM/DD HH:mm').toDate(),
+        data: capData.data.map(point => ({
+          x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
           y: capData.list_price
         })),
         borderColor: color,
@@ -123,7 +125,7 @@ function createChart(model, period){
       maintainAspectRatio: false,
       parsing: false,
       scales: {
-        x: { 
+        x: {
           type: 'time',
           time: { parser: 'MM/DD HH:mm', tooltipFormat: 'MM/DD HH:mm' },
           title: { display: true, text: '日付' }
@@ -148,7 +150,6 @@ function createChart(model, period){
     }
   });
 }
-
 
 function selectPeriod(model, period, btn){
   document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
@@ -203,39 +204,51 @@ async function initializePage(){
 
     if(rows.length<5) throw new Error('CSVデータが不十分です。');
 
+    // **REWRITTEN**: The entire parsing logic is changed here for clarity and correctness.
+    const headerRows = rows.slice(0, 4);
     const dataRows = rows.slice(4);
 
-    // 日付列を抽出
-    const dates = [];
-    dataRows.forEach(r=>{
-      const cell = r[0]?.trim();
-      if(cell && cell.includes('/')) dates.push(cell);
-    });
+    const periods = headerRows[0];
+    const models = headerRows[1];
+    const capacities = headerRows[2];
+    const listPrices = headerRows[3];
 
-    for(let c=1;c<rows[1].length;c++){
-      const model = rows[1][c].trim();
-      const capacity = rows[2][c].trim();
-      const list_price=parsePrice(rows[3][c]);
-      if(!model||!capacity) continue;
+    // Loop through each data COLUMN
+    for (let c = 1; c < models.length; c++) {
+      const model = models[c]?.trim();
+      const capacity = capacities[c]?.trim();
+      const period = periods[c]?.trim();
+      const list_price = parsePrice(listPrices[c]);
 
-      if(!allData[model]){
-        allData[model]={};
-        modelInfo[model]={periods:new Set()};
+      if (!model || !capacity || !period) continue;
+
+      // Initialize data structures if they don't exist
+      if (!allData[model]) {
+        allData[model] = {};
+        modelInfo[model] = { periods: new Set() };
       }
-
-      const period = rows[0][c].trim();
-      if(!allData[model][period]){
-        allData[model][period]={capacities:{},dates:dates};
+      if (!allData[model][period]) {
+        allData[model][period] = { capacities: {} };
       }
-      if(!allData[model][period].capacities[capacity]){
-        allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
-        modelInfo[model].periods.add(period);
+      if (!allData[model][period].capacities[capacity]) {
+        allData[model][period].capacities[capacity] = {
+            list_price: list_price,
+            data: [] // Data will be stored as {date, price} objects
+        };
       }
+      modelInfo[model].periods.add(period);
+      
+      const currentSeriesData = allData[model][period].capacities[capacity].data;
 
-      const capDataArray = allData[model][period].capacities[capacity].data;
-      dataRows.forEach(row=>{
-        const price=parsePrice(row[c]);
-        if(price!==null) capDataArray.push({price});
+      // Loop through each data ROW for the current column
+      dataRows.forEach(row => {
+        const dateStr = row[0]?.trim();
+        const price = parsePrice(row[c]);
+        
+        // Only add a data point if BOTH date and price are valid for this row
+        if (dateStr && price !== null) {
+          currentSeriesData.push({ date: dateStr, price: price });
+        }
       });
     }
 
