@@ -144,7 +144,10 @@ function selectModel(model, btn){
   const periodSelector = document.getElementById('period-selector');
   periodSelector.innerHTML='';
 
-  const periods = Array.from(modelInfo[model].periods).sort();
+  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月'];
+  const periods = Array.from(modelInfo[model].periods);
+  periods.sort((a,b)=> periodOrder.indexOf(a) - periodOrder.indexOf(b));
+
   periods.forEach(p=>{
     const btn=document.createElement('button');
     btn.textContent=p;
@@ -180,6 +183,13 @@ async function initializePage(){
 
     const dataRows = rows.slice(4);
 
+    // 日付を一度だけ抽出
+    const dates = [];
+    for(let r=4;r<rows.length;r++){
+      const cell=rows[r][0]?.trim();
+      if(cell && cell.includes('/')) dates.push(cell);
+    }
+
     for(let c=1;c<rows[1].length;c++){
       const model = rows[1][c].trim();
       const capacity = rows[2][c].trim();
@@ -191,25 +201,15 @@ async function initializePage(){
         modelInfo[model]={periods:new Set()};
       }
 
-      // 期間ごとにまとめる
       const period = rows[0][c].trim();
       if(!allData[model][period]){
-        allData[model][period]={capacities:{},dates:[]};
+        allData[model][period]={capacities:{},dates:dates};
       }
       if(!allData[model][period].capacities[capacity]){
         allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
         modelInfo[model].periods.add(period);
       }
 
-      // 横軸（dates）を5行目から左探索
-      const dates = [];
-      for(let r=4;r<rows.length;r++){
-        const cell=rows[r][0]?.trim();
-        if(cell && cell.includes('/')) dates.push(cell);
-      }
-      allData[model][period].dates=dates;
-
-      // 価格データ
       const capDataArray = allData[model][period].capacities[capacity].data;
       dataRows.forEach((row,ridx)=>{
         const price=parsePrice(row[c]);
