@@ -106,7 +106,7 @@ function createChart(model, period){
     options:{
       responsive:true,
       maintainAspectRatio:false,
-      parsing:false, // 日付ラベルをそのまま使用
+      parsing:false,
       scales:{
         x:{ 
           type:'time',
@@ -186,12 +186,22 @@ async function initializePage(){
 
     const dataRows = rows.slice(4);
 
-    // 日付列を抽出
+    // 日付列を抽出し、全部00:00:00なら時間部分省略
     const dates = [];
+    let allZeroTime = true;
     dataRows.forEach(r=>{
       const cell = r[0]?.trim();
-      if(cell && cell.includes('/')) dates.push(cell);
+      if(cell && cell.includes('/')) {
+        dates.push(cell);
+        const parts = cell.split(' ');
+        if(parts.length > 1 && parts[1] !== '00:00:00') allZeroTime = false;
+      }
     });
+    if(allZeroTime){
+      for(let i=0;i<dates.length;i++){
+        dates[i] = dates[i].split(' ')[0];
+      }
+    }
 
     for(let c=1;c<rows[1].length;c++){
       const model = rows[1][c].trim();
@@ -205,13 +215,9 @@ async function initializePage(){
       }
 
       const period = rows[0][c].trim();
-      if(!allData[model][period]){
-        allData[model][period]={capacities:{},dates:dates};
-      }
-      if(!allData[model][period].capacities[capacity]){
-        allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
-        modelInfo[model].periods.add(period);
-      }
+      if(!allData[model][period]) allData[model][period]={capacities:{},dates:dates};
+      if(!allData[model][period].capacities[capacity]) allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
+      modelInfo[model].periods.add(period);
 
       const capDataArray = allData[model][period].capacities[capacity].data;
       dataRows.forEach(row=>{
