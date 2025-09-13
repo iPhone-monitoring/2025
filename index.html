@@ -3,184 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>相場グラフ - iPhone相場</title>
+<title>過去の相場グラフ - iPhone相場</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-.active-btn { 
-    @apply bg-blue-600 text-white border-blue-600;
+html, body { min-height: 100vh; margin:0; }
+body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; }
+main { flex-grow:1; }
+summary::-webkit-details-marker {
+    display: none;
 }
-.model-selector-btn, .period-selector-btn {
-    @apply px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border;
+summary {
+    list-style: none;
+}
+details[open] summary svg {
+    transform: rotate(180deg);
 }
 </style>
 </head>
-<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+<body class="bg-slate-50 text-slate-800">
 
+<!-- ヘッダー -->
 <header class="bg-white shadow-md sticky top-0 z-10">
     <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-        <a href="#" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+        <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+        <nav class="hidden md:flex items-center space-x-6">
+            <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
+            <!-- iPhone 17 ドロップダウン (クリック式) -->
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    iPhone 17
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
+                    <a href="market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
+
+            <!-- 過去データ ドロップダウン (クリック式) -->
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    過去データ
+                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="../past-data/market-price-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
+        </nav>
+        <!-- ハンバーガーメニューボタン -->
+        <button id="mobile-menu-button" class="block md:hidden text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+    </div>
+    <!-- モバイルメニュー -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+        <a href="../index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
+        <details class="w-full">
+            <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                <span>iPhone 17</span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <div class="bg-slate-50">
+                <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
+                <a href="market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                <a href="market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+            </div>
+        </details>
+         <details class="w-full">
+            <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                <span>過去データ</span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <div class="bg-slate-50">
+                <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                <a href="../past-data/market-price-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+            </div>
+        </details>
     </div>
 </header>
 
-<main class="container mx-auto px-6 py-8 md:py-12 flex-grow">
-    <h1 class="text-3xl font-bold text-slate-800 mb-6">過去の相場グラフ</h1>
-
-    <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-        <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
-        <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
-    </div>
-
-    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-        <canvas id="priceChart" class="w-full min-h-[400px]"></canvas>
-    </div>
+<main class="container mx-auto px-6 py-8 md:py-12">
+ <!-- メインコンテンツはここに追記 -->
 </main>
 
-<footer class="bg-slate-800 text-white mt-auto text-center py-4">
-    &copy; 2025 iPhone相場
+<!-- フッター -->
+<footer class="bg-slate-800 text-white mt-auto">
+    <div class="container mx-auto px-6 py-8 text-center">
+        <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+    </div>
 </footer>
 
+
 <script>
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=8162687&single=true&output=csv';
-
-let allData = {};
-let modelInfo = {};
-let chartInstance = null;
-
-function parsePrice(str){return str?parseFloat(str.replace(/["\s,]/g,'')):null;}
-function parseLabel(str){return str?str.replace(/["]/g,'').trim():'';}
-
-function createChart(model, period){
-    const ctx = document.getElementById('priceChart').getContext('2d');
-    if(chartInstance) chartInstance.destroy();
-
-    const chartData = allData[model][period];
-    if(!chartData) return;
-
-    const datasets = [];
-    const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
-    let colorIndex = 0;
-
-    Object.keys(chartData.capacities).forEach(capacity=>{
-        datasets.push({
-            label: capacity,
-            data: chartData.capacities[capacity].data.map((price,i)=>({x: chartData.labels[i], y: price})),
-            borderColor: colors[colorIndex % colors.length],
-            backgroundColor:'transparent',
-            borderWidth:2,
-            tension:0.2,
-            pointRadius:0
-        });
-
-        const listPrice = chartData.capacities[capacity].list_price;
-        if(listPrice){
-            datasets.push({
-                label: capacity+' 定価',
-                data: chartData.labels.map(l=>({x:l,y:listPrice})),
-                borderColor: colors[colorIndex % colors.length],
-                borderWidth:1.5,
-                borderDash:[5,5],
-                pointRadius:0,
-                fill:false
-            });
-        }
-        colorIndex++;
-    });
-
-    chartInstance = new Chart(ctx,{
-        type:'line',
-        data:{datasets:datasets},
-        options:{
-            responsive:true,
-            maintainAspectRatio:false,
-            parsing:false,
-            scales:{
-                x:{type:'category',title:{display:true,text:'日付'}},
-                y:{title:{display:true,text:'価格(円)'},
-                   ticks:{callback:v=>'¥'+v.toLocaleString()}}
-            },
-            plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ¥'+ctx.parsed.y.toLocaleString()}}}
-        }
-    });
-}
-
-function selectPeriod(model, period, btn){
-    document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
-    btn.classList.add('active-btn');
-    createChart(model, period);
-}
-
-function selectModel(model, btn){
-    document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
-    btn.classList.add('active-btn');
-
-    const periodSelector = document.getElementById('period-selector');
-    periodSelector.innerHTML='';
-    Array.from(modelInfo[model].periods).sort().forEach(period=>{
-        const pbtn = document.createElement('button');
-        pbtn.className='period-selector-btn';
-        pbtn.textContent=period;
-        pbtn.addEventListener('click',()=>selectPeriod(model,period,pbtn));
-        periodSelector.appendChild(pbtn);
-    });
-
-    if(chartInstance) chartInstance.destroy();
-}
-
-async function initializePage(){
-    const modelSelector = document.getElementById('model-selector');
-    try{
-        const res = await fetch(CSV_URL);
-        const csvText = await res.text();
-        const rows = csvText.trim().split(/\r?\n/).map(r=>r.split(','));
-        const dataRows = rows.slice(4);
-
-        for(let c=1;c<rows[0].length;c++){
-            const period=parseLabel(rows[0][c]);
-            const model=parseLabel(rows[1][c]);
-            const capacity=parseLabel(rows[2][c]);
-            const list_price=parsePrice(rows[3][c]);
-            if(!model || !period || !capacity) continue;
-
-            if(!allData[model]){
-                allData[model]={};
-                modelInfo[model]={periods:new Set()};
-            }
-            if(!allData[model][period]){
-                allData[model][period]={capacities:{},labels:[]};
-                modelInfo[model].periods.add(period);
-            }
-            if(!allData[model][period].capacities[capacity]){
-                allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
-            }
-
-            const dataArr=allData[model][period].capacities[capacity].data;
-            const labelsArr=allData[model][period].labels;
-
-            dataRows.forEach(row=>{
-                const dateStr=parseLabel(row[0]);
-                const price=parsePrice(row[c]);
-                if(dateStr && price!==null){
-                    dataArr.push(price);
-                    if(!labelsArr.includes(dateStr)) labelsArr.push(dateStr);
+function setupEventListeners() {
+    // デスクトップ用ドロップダウン
+    const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownId = this.getAttribute('data-dropdown-toggle');
+            const dropdownMenu = document.getElementById(dropdownId);
+            
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.add('hidden');
                 }
             });
-        }
-
-        const order=['iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro MAX','iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro MAX','iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro MAX'];
-        order.forEach(m=>{
-            if(!modelInfo[m]) return;
-            const btn = document.createElement('button');
-            btn.className='model-selector-btn';
-            btn.textContent=m;
-            btn.addEventListener('click',()=>selectModel(m,btn));
-            modelSelector.appendChild(btn);
+            dropdownMenu.classList.toggle('hidden');
         });
+    });
 
-    }catch(e){console.error(e);}
+    // 他の場所をクリックしたらドロップダウンを閉じる
+    window.addEventListener('click', function(event) {
+        if (!event.target.closest('.js-dropdown')) {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+
+    // モバイルメニューの制御
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+
+    // モバイルメニュー内のアコーディオン
+    const detailsElements = document.querySelectorAll('#mobile-menu details');
+    detailsElements.forEach(details => {
+        details.addEventListener('toggle', function() {
+            if (this.open) {
+                // 他の開いているdetailsを閉じる
+                detailsElements.forEach(otherDetails => {
+                    if (otherDetails !== this && otherDetails.open) {
+                        otherDetails.removeAttribute('open');
+                    }
+                });
+            }
+        });
+    });
 }
 
-document.addEventListener('DOMContentLoaded',initializePage);
+document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+});
 </script>
 </body>
 </html>
+
