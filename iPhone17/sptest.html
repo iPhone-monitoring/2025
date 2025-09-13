@@ -78,13 +78,11 @@ function createChart(model, period){
     return;
   }
 
-  // ✅ FIX: Create a master list of all unique dates from ALL capacities for this period.
   const allDates = new Set();
   Object.values(chartData.capacities).forEach(cap => {
       cap.data.forEach(point => allDates.add(point.date));
   });
 
-  // Sort the dates chronologically to ensure the X-axis is correct.
   const labels = Array.from(allDates).sort((a, b) => {
       const dateA = dayjs(a, 'MM/DD HH:mm');
       const dateB = dayjs(b, 'MM/DD HH:mm');
@@ -100,7 +98,6 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
-    // ✅ FIX: Create a map for quick price lookups and align data against the master 'labels' array.
     const priceMap = new Map(capData.data.map(p => [p.date, p.price]));
     const alignedPriceData = labels.map(date => priceMap.get(date) ?? null);
 
@@ -223,53 +220,88 @@ async function initializePage(){
     const text = await response.text();
     const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
 
-    if(rows.length<5) throw new Error('CSVデータが不十分です。');
+    if(rows.length < 4) throw new Error('CSVデータが不十分です。');
 
-    const headerRows = rows.slice(0, 4);
-    const dataRows = rows.slice(4);
+    // Headers are now the first 3 rows. Data starts from the 4th row.
+    const modelsHeader = rows[0];
+    const capacitiesHeader = rows[1];
+    const listPricesHeader = rows[2];
+    const dataRows = rows.slice(3);
 
-    const periods = headerRows[0];
-    const models = headerRows[1];
-    const capacities = headerRows[2];
-    const listPrices = headerRows[3];
-
-    for (let c = 1; c < models.length; c++) {
-      const model = models[c]?.trim();
-      const capacity = capacities[c]?.trim();
-      const period = periods[c]?.trim();
-      const list_price = parsePrice(listPrices[c]);
-
-      // ✅ FIX: Added a check to explicitly filter out the header text "機種".
-      if (!model || model === '機種' || !capacity || !period) continue;
-
-      if (!allData[model]) {
-        allData[model] = {};
-        modelInfo[model] = { periods: new Set() };
+    // ✅ NEW: Configuration object for periods based on model series and their data ranges.
+    const periodConfig = {
+      'iPhone 14': {
+        '1週間': { dateCol: 0, rows: 8 },    // A4:A11 in sheet
+        '1ヶ月': { dateCol: 0, rows: 31 },   // A4:A34 in sheet
+        '3ヶ月': { dateCol: 0, rows: 92 },   // A4:A95 in sheet
+        '6ヶ月': { dateCol: 0, rows: 182 }  // A4:A185 in sheet
+      },
+      'iPhone 15': {
+        '1週間': { dateCol: 13, rows: 192 }, // N4:N195 in sheet
+        '1ヶ月': { dateCol: 13, rows: 744 }, // N4:N747 in sheet
+        '3ヶ月': { dateCol: 27, rows: 92 },  // AB4:AB95 in sheet
+        '6ヶ月': { dateCol: 27, rows: 182 }  // AB4:AB185 in sheet
+      },
+      'iPhone 16': {
+        '1週間': { dateCol: 41, rows: 192 }, // AP4:AP195 in sheet
+        '1ヶ月': { dateCol: 41, rows: 744 }, // AP4:AP747 in sheet
+        '3ヶ月': { dateCol: 55, rows: 92 },  // BD4:BD95 in sheet
+        '6ヶ月': { dateCol: 55, rows: 182 }  // BD4:BD185 in sheet
       }
-      if (!allData[model][period]) {
-        allData[model][period] = { capacities: {} };
-      }
-      if (!allData[model][period].capacities[capacity]) {
-        allData[model][period].capacities[capacity] = {
-            list_price: list_price,
-            data: []
-        };
-      }
-      modelInfo[model].periods.add(period);
-      
-      const currentSeriesData = allData[model][period].capacities[capacity].data;
+    };
 
-      dataRows.forEach(row => {
-        // Only process a row if the price cell for this column is not empty.
-        // This links the row's data specifically to this column's period.
-        if (row[c]?.trim()) {
-            const dateStr = row[0]?.trim();
-            const price = parsePrice(row[c]);
-            if(dateStr) { // Ensure there is a date in the row
-                currentSeriesData.push({ date: dateStr, price: price });
-            }
+    // Iterate through each column to find model/capacity pairs
+    for (let c = 1; c < modelsHeader.length; c++) {
+      const model = modelsHeader[c]?.trim();
+      const capacity = capacitiesHeader[c]?.trim();
+      const list_price = parsePrice(listPricesHeader[c]);
+
+      if (!model || model === '機種' || !capacity) continue;
+
+      // Determine which model series this column belongs to
+      let seriesKey = null;
+      if (model.includes('iPhone 14')) seriesKey = 'iPhone 14';
+      else if (model.includes('iPhone 15')) seriesKey = 'iPhone 15';
+      else if (model.includes('iPhone 16')) seriesKey = 'iPhone 16';
+
+      if (!seriesKey) continue; // Skip if it's not a recognized series
+
+      const seriesConfig = periodConfig[seriesKey];
+
+      // Programmatically create data entries for each period (1週間, 1ヶ月, etc.)
+      for (const periodName in seriesConfig) {
+        const config = seriesConfig[periodName];
+        const dateColIdx = config.dateCol;
+        const numRows = config.rows;
+
+        // Initialize data structures in the main `allData` object
+        if (!allData[model]) {
+          allData[model] = {};
+          modelInfo[model] = { periods: new Set() };
         }
-      });
+        if (!allData[model][periodName]) {
+          allData[model][periodName] = { capacities: {} };
+        }
+        if (!allData[model][periodName].capacities[capacity]) {
+          allData[model][periodName].capacities[capacity] = {
+              list_price: list_price,
+              data: []
+          };
+        }
+        modelInfo[model].periods.add(periodName);
+        
+        const currentSeriesData = allData[model][periodName].capacities[capacity].data;
+        const relevantRows = dataRows.slice(0, numRows);
+
+        // Extract date and price from the correct columns for the specified number of rows
+        relevantRows.forEach(row => {
+          const dateStr = row[dateColIdx]?.trim();
+          const price = parsePrice(row[c]);
+          if(dateStr && price !== null) {
+              currentSeriesData.push({ date: dateStr, price: price });
+          }
+        });
+      }
     }
 
     const modelsOrder = ['iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro MAX','iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro MAX','iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro MAX'];
@@ -282,7 +314,7 @@ async function initializePage(){
       modelSelector.appendChild(btn);
     });
 
-    if(Object.keys(modelInfo).length===0) showError('解析できるデータがありません');
+    if(Object.keys(modelInfo).length === 0) showError('解析できるデータがありません');
 
   }catch(e){
     console.error(e);
