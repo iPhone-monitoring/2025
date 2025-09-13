@@ -6,7 +6,6 @@
 <title>過去相場グラフ - iPhone相場</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
 body { font-family:'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; color:#1e293b; }
 main { flex-grow:1; }
@@ -29,12 +28,8 @@ button { cursor:pointer; }
 <h2 class="text-3xl font-bold mb-6">過去の相場グラフ</h2>
 
 <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-<div id="model-selector" class="flex flex-wrap gap-2 justify-center mb-4">
-<!-- 機種ボタン -->
-</div>
-<div id="period-selector" class="flex flex-wrap gap-2 justify-center pt-4">
-<!-- 期間ボタン -->
-</div>
+<div id="model-selector" class="flex flex-wrap gap-2 justify-center mb-4"></div>
+<div id="period-selector" class="flex flex-wrap gap-2 justify-center pt-4"></div>
 </div>
 
 <div class="bg-white p-4 rounded-lg shadow-md">
@@ -57,48 +52,50 @@ let allData = {};
 let modelInfo = {};
 let chartInstance = null;
 
-function parsePrice(str) {
-    if (!str) return null;
+function parsePrice(str){
+    if(!str) return null;
     const n = parseFloat(str.replace(/[^\d.]/g,''));
-    return isNaN(n) ? null : n;
+    return isNaN(n)? null : n;
 }
 
-function createChart(model, period) {
+function createChart(model, period){
     const graphContainer = document.getElementById('graph-container');
-    if (chartInstance) chartInstance.destroy();
+    if(chartInstance) chartInstance.destroy();
     graphContainer.innerHTML = '<canvas id="priceChart"></canvas>';
     const ctx = document.getElementById('priceChart').getContext('2d');
 
     const chartData = allData[model]?.[period];
-    if (!chartData) {
+    if(!chartData){
         graphContainer.innerHTML = `<p class="text-center p-8 text-slate-500">選択された期間のグラフデータがありません。</p>`;
         return;
     }
 
+    const labels = chartData.labels; // 文字列としての日付/時間を等間隔に配置
     const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
     const datasets = [];
     let colorIndex = 0;
-    Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(capacity => {
+
+    Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(capacity=>{
         const capacityData = chartData.capacities[capacity];
         const color = colors[colorIndex % colors.length];
         datasets.push({
             label: capacity,
             data: capacityData.data,
             borderColor: color,
-            backgroundColor: color+'33',
-            borderWidth: 2.5,
+            borderWidth:2.5,
+            fill:false,
             tension:0.1,
             pointRadius:0
         });
-        if (capacityData.list_price !== null) {
+        if(capacityData.list_price!==null){
             datasets.push({
                 label:`${capacity} 定価`,
-                data: capacityData.data.map(d=>({x:d.x,y:capacityData.list_price})),
-                borderColor: color,
+                data:capacityData.data.map(d=>capacityData.list_price),
+                borderColor:color,
                 borderWidth:1.5,
                 borderDash:[5,5],
-                pointRadius:0,
-                fill:false
+                fill:false,
+                pointRadius:0
             });
         }
         colorIndex++;
@@ -106,18 +103,16 @@ function createChart(model, period) {
 
     chartInstance = new Chart(ctx,{
         type:'line',
-        data:{datasets:datasets},
+        data:{
+            labels:labels,
+            datasets:datasets
+        },
         options:{
             responsive:true,
             maintainAspectRatio:false,
             scales:{
                 x:{
-                    type:'time',
-                    time:{
-                        tooltipFormat:'yyyy/MM/dd HH:mm',
-                        displayFormats:{day:'MM/dd', hour:'MM/dd HH:mm'}
-                    },
-                    title:{display:true,text:'日付'}
+                    title:{display:true,text:'日付/時間'}
                 },
                 y:{
                     title:{display:true,text:'価格 (円)'},
@@ -130,9 +125,9 @@ function createChart(model, period) {
                 tooltip:{
                     callbacks:{
                         label:function(context){
-                            let label = context.dataset.label || '';
-                            if(label) label += ': ';
-                            if(context.parsed.y !== null) label += '¥'+context.parsed.y.toLocaleString();
+                            let label=context.dataset.label||'';
+                            if(label) label+=': ';
+                            if(context.parsed.y!==null) label+='¥'+context.parsed.y.toLocaleString();
                             return label;
                         }
                     }
@@ -153,7 +148,7 @@ function selectModel(model, btnElement){
     btnElement.classList.add('active-btn');
 
     const periodSelector = document.getElementById('period-selector');
-    periodSelector.innerHTML = '';
+    periodSelector.innerHTML='';
     const periods = Array.from(modelInfo[model].periods).sort((a,b)=>{
         const order=['1週間','1ヶ月','3ヶ月','6ヶ月'];
         return order.indexOf(a)-order.indexOf(b);
@@ -189,7 +184,6 @@ async function initializePage(){
         modelOrder.forEach(model=>{
             for(let c=0;c<rows[1].length;c++){
                 if(rows[1][c].trim()===model){
-                    // 機種・期間・容量・定価を取得
                     const period=rows[0][c].trim();
                     const capacity=rows[2][c].trim();
                     const list_price=parsePrice(rows[3][c]);
@@ -197,22 +191,28 @@ async function initializePage(){
                     if(!allData[model]){ allData[model]={}; modelInfo[model]={periods:new Set()}; }
                     if(!allData[model][period]) allData[model][period]={capacities:{}};
                     if(!allData[model][period].capacities[capacity]) allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
+
                     modelInfo[model].periods.add(period);
 
-                    // 日付データの探索（左方向に空白セルまで）
-                    let startCol=c;
+                    // 日付列探索（左方向に文字列が入っている最初の列）
                     let dateCol=null;
                     for(let x=c;x>=0;x--){
                         if(rows[4][x].trim()!=='' && isNaN(rows[4][x].trim())){ dateCol=x; break; }
                     }
                     if(dateCol===null) continue;
 
-                    // データ範囲はc列（対象機種容量）とdateCol列（横軸）
+                    const labels=[];
+                    const data=[];
                     for(let r=0;r<dataRows.length;r++){
                         const dateStr=dataRows[r][dateCol].trim();
                         const price=parsePrice(dataRows[r][c]);
-                        if(dateStr && price!==null) allData[model][period].capacities[capacity].data.push({x:dateStr,y:price});
+                        if(dateStr && price!==null){
+                            labels.push(dateStr);
+                            data.push(price);
+                        }
                     }
+                    allData[model][period].labels=labels;
+                    allData[model][period].capacities[capacity].data=data;
                 }
             }
         });
@@ -228,7 +228,9 @@ async function initializePage(){
                 modelSelector.appendChild(btn);
             }
         });
+
         if(Object.keys(modelInfo).length===0) showError('解析できる機種データがありません。CSV形式を確認してください。');
+
     }catch(e){
         console.error(e);
         showError('データ取得または処理に失敗しました。<br>エラー: '+e.message);
