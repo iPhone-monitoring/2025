@@ -88,11 +88,11 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
-    // ✅ FIX: Pass the date string directly to Chart.js
+    // ✅ FIX: Convert date string to a Date object before passing it to the chart.
     datasets.push({
       label: cap,
       data: capData.data.map(point => ({
-        x: point.date,
+        x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
         y: point.price
       })),
       borderColor: color,
@@ -103,11 +103,11 @@ function createChart(model, period){
     });
 
     if(capData.list_price){
-      // ✅ FIX: Pass the date string directly here as well
+      // ✅ FIX: Do the same for the list price line.
       datasets.push({
         label: cap+' 定価',
         data: capData.data.map(point => ({
-          x: point.date,
+          x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
           y: capData.list_price
         })),
         borderColor: color,
@@ -126,13 +126,11 @@ function createChart(model, period){
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      // ✅ FIX: Removed `parsing: false` to allow Chart.js to parse the date strings.
       scales: {
         x: {
           type: 'time',
           time: {
-            // ✅ FIX: Tell Chart.js how to parse the date strings.
-            parser: 'MM/DD HH:mm',
+            // ✅ FIX: Remove the parser hint as we are now providing Date objects.
             tooltipFormat: 'MM/DD HH:mm'
           },
           title: { display: true, text: '日付' }
