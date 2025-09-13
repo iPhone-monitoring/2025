@@ -319,7 +319,6 @@ function selectModel(model, btnElement) {
     const capacityContainer = document.getElementById('capacity-selector');
     capacityContainer.classList.add('visible');
     capacityContainer.innerHTML = '';
-// ... existing code ... -->
     const capacities = modelCapacityMap[model] || [];
     capacities.forEach(cap => {
         const btn = document.createElement('button');
@@ -452,7 +451,7 @@ async function initializePage(){
         Object.keys(modelCapacityMap).forEach(model=>{
             const btn=document.createElement('button');
             btn.textContent=model;
-            btn.className='model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-4 py-2 text-xs sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
+            btn.className='model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
             btn.addEventListener('click',() => selectModel(model, btn));
             modelSelector.appendChild(btn);
         });
@@ -533,5 +532,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
 
