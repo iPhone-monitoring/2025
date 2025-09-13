@@ -7,12 +7,10 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
-<!-- ✅ FIX: Add the CustomParseFormat plugin for Day.js -->
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
 <script>
-  // ✅ FIX: Extend Day.js with the new plugin
   dayjs.extend(dayjs_plugin_customParseFormat);
   dayjs.extend(dayjs_plugin_utc);
   dayjs.extend(dayjs_plugin_timezone);
@@ -63,13 +61,14 @@ function parsePrice(str){
 function createChart(model, period){
   const canvas = document.getElementById('priceChart');
   const placeholder = document.getElementById('graph-placeholder');
-  canvas.style.display = 'block';
-  placeholder.style.display = 'none';
-
+  
   if(chartInstance){
     chartInstance.destroy();
     chartInstance = null;
   }
+  
+  canvas.style.display = 'block';
+  placeholder.style.display = 'none';
   const ctx = canvas.getContext('2d');
 
   const chartData = allData[model]?.[period];
@@ -89,10 +88,11 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
+    // ✅ FIX: Pass the date string directly to Chart.js
     datasets.push({
       label: cap,
       data: capData.data.map(point => ({
-        x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
+        x: point.date,
         y: point.price
       })),
       borderColor: color,
@@ -103,10 +103,11 @@ function createChart(model, period){
     });
 
     if(capData.list_price){
+      // ✅ FIX: Pass the date string directly here as well
       datasets.push({
         label: cap+' 定価',
         data: capData.data.map(point => ({
-          x: dayjs(point.date, 'MM/DD HH:mm').toDate(),
+          x: point.date,
           y: capData.list_price
         })),
         borderColor: color,
@@ -125,11 +126,13 @@ function createChart(model, period){
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      parsing: false,
+      // ✅ FIX: Removed `parsing: false` to allow Chart.js to parse the date strings.
       scales: {
         x: {
           type: 'time',
           time: {
+            // ✅ FIX: Tell Chart.js how to parse the date strings.
+            parser: 'MM/DD HH:mm',
             tooltipFormat: 'MM/DD HH:mm'
           },
           title: { display: true, text: '日付' }
@@ -274,3 +277,4 @@ document.addEventListener('DOMContentLoaded',initializePage);
 
 </body>
 </html>
+
