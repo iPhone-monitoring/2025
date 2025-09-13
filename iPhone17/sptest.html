@@ -6,6 +6,8 @@
 <title>iPhone 相場グラフ</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-dayjs"></script>
 <style>
 html, body { height: 100%; margin:0; }
 body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
@@ -48,8 +50,25 @@ function parsePrice(str){
   return isNaN(n)? null:n;
 }
 
+// 日付パース（モデル・期間によって粒度を変える）
+function parseDate(value, period, model) {
+  if (!value) return null;
+
+  if (model.includes("iPhone 14")) {
+    // iPhone14シリーズ → 全て日単位
+    return dayjs(value, "MM/DD").toDate();
+  } else {
+    if (period === "1週間" || period === "1ヶ月") {
+      // 1時間おきデータ
+      return dayjs(value.replace("時", ":00"), "MM/DD HH:mm").toDate();
+    } else {
+      // 日単位データ
+      return dayjs(value, "MM/DD").toDate();
+    }
+  }
+}
+
 function createChart(model, period){
-  const graphContainer = document.getElementById('graph-container');
   const canvas = document.getElementById('priceChart');
   const placeholder = document.getElementById('graph-placeholder');
   canvas.style.display = 'block';
@@ -76,7 +95,10 @@ function createChart(model, period){
     const color = colors[colorIndex%colors.length];
     datasets.push({
       label: cap,
-      data: capData.data.map((v,i)=>({x:i, y:v.price})),
+      data: capData.data.map((v,i)=>({
+        x: parseDate(chartData.dates[i], period, model),
+        y: v.price
+      })),
       borderColor: color,
       borderWidth: 2.5,
       fill:false,
@@ -87,7 +109,10 @@ function createChart(model, period){
     if(capData.list_price){
       datasets.push({
         label: cap+' 定価',
-        data: capData.data.map((v,i)=>({x:i, y:capData.list_price})),
+        data: capData.data.map((v,i)=>({
+          x: parseDate(chartData.dates[i], period, model),
+          y: capData.list_price
+        })),
         borderColor: color,
         borderWidth:1.5,
         borderDash:[5,5],
@@ -106,8 +131,11 @@ function createChart(model, period){
       maintainAspectRatio:false,
       scales:{
         x:{ 
-          type:'category',
-          labels:chartData.dates,
+          type:'time',
+          time:{
+            unit:(period === "1週間" || period === "1ヶ月") ? 'hour' : 'day',
+            tooltipFormat:(period === "1週間" || period === "1ヶ月") ? 'MM/DD HH:mm' : 'MM/DD'
+          },
           title:{display:true,text:'日付'}
         },
         y:{
@@ -182,13 +210,7 @@ async function initializePage(){
     if(rows.length<5) throw new Error('CSVデータが不十分です。');
 
     const dataRows = rows.slice(4);
-
-    // 日付を一度だけ抽出
-    const dates = [];
-    for(let r=4;r<rows.length;r++){
-      const cell=rows[r][0]?.trim();
-      if(cell && cell.includes('/')) dates.push(cell);
-    }
+    const dates = dataRows.map(row => row[0]?.trim()).filter(cell=>cell && cell.includes('/'));
 
     for(let c=1;c<rows[1].length;c++){
       const model = rows[1][c].trim();
@@ -211,7 +233,7 @@ async function initializePage(){
       }
 
       const capDataArray = allData[model][period].capacities[capacity].data;
-      dataRows.forEach((row,ridx)=>{
+      dataRows.forEach((row)=>{
         const price=parsePrice(row[c]);
         if(price!==null){
           capDataArray.push({price});
