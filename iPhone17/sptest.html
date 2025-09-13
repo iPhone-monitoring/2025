@@ -99,7 +99,6 @@
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=761980576&single=true&output=csv';
-const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(CSV_URL)}`;
 
 let allData = {};
 let modelInfo = {}; // To store periods and capacities for each model
@@ -260,7 +259,7 @@ async function initializePage() {
     };
 
     try {
-        const response = await fetchWithRetry(PROXY_URL);
+        const response = await fetchWithRetry(CSV_URL);
         if (!response.ok) throw new Error('CSV取得エラー: ' + response.statusText);
         const csvText = await response.text();
         const rows = csvText.trim().split(/\r?\n/).map(r => r.split(','));
