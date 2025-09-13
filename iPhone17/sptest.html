@@ -3,31 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPhone相場グラフ</title>
+<title>相場グラフ - iPhone相場</title>
+<script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-body{font-family:'Inter','Noto Sans JP',sans-serif;margin:0;padding:0;background:#f1f5f9;color:#1e293b;}
-header,footer{background:#1e293b;color:white;text-align:center;padding:1rem;}
-main{padding:1rem;}
-button{cursor:pointer;}
-.active-btn{background:#2563eb;color:white;border:1px solid #2563eb;}
-.model-selector-btn, .period-selector-btn{margin:0.2rem;padding:0.4rem 0.8rem;border:1px solid #cbd5e1;border-radius:0.25rem;background:white;color:#1e293b;}
-.model-selector-btn:hover, .period-selector-btn:hover{background:#e2e8f0;}
+.active-btn { 
+    @apply bg-blue-600 text-white border-blue-600;
+}
+.model-selector-btn, .period-selector-btn {
+    @apply px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border;
+}
 </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-<header><h1>iPhone相場グラフ</h1></header>
+<header class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="#" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+    </div>
+</header>
 
-<main>
-<div id="model-selector" style="margin-bottom:1rem;"></div>
-<div id="period-selector" style="margin-bottom:1rem;"></div>
-<div style="background:white;padding:1rem;border-radius:0.5rem;">
-    <canvas id="priceChart" height="400"></canvas>
-</div>
+<main class="container mx-auto px-6 py-8 md:py-12 flex-grow">
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">過去の相場グラフ</h1>
+
+    <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+        <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
+        <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
+    </div>
+
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        <canvas id="priceChart" class="w-full min-h-[400px]"></canvas>
+    </div>
 </main>
 
-<footer>&copy; 2025 iPhone相場</footer>
+<footer class="bg-slate-800 text-white mt-auto text-center py-4">
+    &copy; 2025 iPhone相場
+</footer>
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=8162687&single=true&output=csv';
@@ -36,15 +47,8 @@ let allData = {};
 let modelInfo = {};
 let chartInstance = null;
 
-function parsePrice(str){
-    if(!str) return null;
-    return parseFloat(str.replace(/["\s,]/g,''));
-}
-
-function parseLabel(str){
-    if(!str) return '';
-    return str.replace(/["]/g,'').trim();
-}
+function parsePrice(str){return str?parseFloat(str.replace(/["\s,]/g,'')):null;}
+function parseLabel(str){return str?str.replace(/["]/g,'').trim():'';}
 
 function createChart(model, period){
     const ctx = document.getElementById('priceChart').getContext('2d');
@@ -55,8 +59,8 @@ function createChart(model, period){
 
     const datasets = [];
     const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
-
     let colorIndex = 0;
+
     Object.keys(chartData.capacities).forEach(capacity=>{
         datasets.push({
             label: capacity,
@@ -68,7 +72,6 @@ function createChart(model, period){
             pointRadius:0
         });
 
-        // 定価線
         const listPrice = chartData.capacities[capacity].list_price;
         if(listPrice){
             datasets.push({
@@ -81,7 +84,6 @@ function createChart(model, period){
                 fill:false
             });
         }
-
         colorIndex++;
     });
 
@@ -93,26 +95,11 @@ function createChart(model, period){
             maintainAspectRatio:false,
             parsing:false,
             scales:{
-                x:{
-                    type:'category',
-                    title:{display:true,text:'日付'}
-                },
-                y:{
-                    title:{display:true,text:'価格(円)'},
-                    ticks:{
-                        callback:function(value){return '¥'+value.toLocaleString();}
-                    }
-                }
+                x:{type:'category',title:{display:true,text:'日付'}},
+                y:{title:{display:true,text:'価格(円)'},
+                   ticks:{callback:v=>'¥'+v.toLocaleString()}}
             },
-            plugins:{
-                tooltip:{
-                    callbacks:{
-                        label:function(context){
-                            return context.dataset.label + ': ¥' + context.parsed.y.toLocaleString();
-                        }
-                    }
-                }
-            }
+            plugins:{tooltip:{callbacks:{label:ctx=>ctx.dataset.label+': ¥'+ctx.parsed.y.toLocaleString()}}}
         }
     });
 }
@@ -129,7 +116,7 @@ function selectModel(model, btn){
 
     const periodSelector = document.getElementById('period-selector');
     periodSelector.innerHTML='';
-    modelInfo[model].periods.forEach(period=>{
+    Array.from(modelInfo[model].periods).sort().forEach(period=>{
         const pbtn = document.createElement('button');
         pbtn.className='period-selector-btn';
         pbtn.textContent=period;
@@ -146,13 +133,13 @@ async function initializePage(){
         const res = await fetch(CSV_URL);
         const csvText = await res.text();
         const rows = csvText.trim().split(/\r?\n/).map(r=>r.split(','));
+        const dataRows = rows.slice(4);
 
-        const dataRows = rows.slice(4); // 日付と価格
         for(let c=1;c<rows[0].length;c++){
-            const period = parseLabel(rows[0][c]);
-            const model = parseLabel(rows[1][c]);
-            const capacity = parseLabel(rows[2][c]);
-            const list_price = parsePrice(rows[3][c]);
+            const period=parseLabel(rows[0][c]);
+            const model=parseLabel(rows[1][c]);
+            const capacity=parseLabel(rows[2][c]);
+            const list_price=parsePrice(rows[3][c]);
             if(!model || !period || !capacity) continue;
 
             if(!allData[model]){
@@ -167,12 +154,12 @@ async function initializePage(){
                 allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
             }
 
-            const dataArr = allData[model][period].capacities[capacity].data;
-            const labelsArr = allData[model][period].labels;
+            const dataArr=allData[model][period].capacities[capacity].data;
+            const labelsArr=allData[model][period].labels;
 
             dataRows.forEach(row=>{
-                const dateStr = parseLabel(row[0]);
-                const price = parsePrice(row[c]);
+                const dateStr=parseLabel(row[0]);
+                const price=parsePrice(row[c]);
                 if(dateStr && price!==null){
                     dataArr.push(price);
                     if(!labelsArr.includes(dateStr)) labelsArr.push(dateStr);
@@ -195,6 +182,5 @@ async function initializePage(){
 
 document.addEventListener('DOMContentLoaded',initializePage);
 </script>
-
 </body>
 </html>
