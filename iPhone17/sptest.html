@@ -131,8 +131,7 @@
     </footer>
 
 <script>
-const DROPBOX_CSV_URL = 'https://www.dropbox.com/scl/fi/ls2rcgkx68xqx31mgqs40/overseas-prices.csv?rlkey=wddtnl73jgqgbwtwcw0s7wagx&dl=1';
-const PROXY_URL = `https://corsproxy.io/?${encodeURIComponent(DROPBOX_CSV_URL)}`;
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=1368139795&single=true&output=csv';
 
 let allParsedData = [];
 let modelCapacityMap = {};
@@ -357,9 +356,9 @@ async function initializePage(){
     const showError=msg=>{ document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
 
     try{
-        const response=await fetchWithRetry(PROXY_URL);
+        const response=await fetchWithRetry(CSV_URL);
         const csvText=await response.text();
-        const rows=csvText.trim().replace(/\r/g,'').split('\n').map(r=>r.split(',')).filter(r=>r.length>1 && r.join('').trim()!=='');
+        const rows=csvText.trim().split(/\r?\n/).map(r=>r.split(',')).filter(r=>r.length>1 && r.join('').trim()!=='');
 
         if (rows.length < 4) throw new Error('CSVデータが不正です。');
 
