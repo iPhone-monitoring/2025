@@ -223,12 +223,12 @@ function renderContent(model, capacity) {
         const li = document.createElement('li');
         li.className = `flex items-center justify-between p-3 rounded-md bg-slate-50`; // 4位以下と同様の表示
         li.innerHTML = `
-            <div class="flex items-center">
-                <span class="text-xl font-bold w-8 text-center text-slate-500">-</span>
-                <span class="ml-4 text-slate-800 font-semibold text-lg">${chinaData.flag || ''} ${chinaData.country}</span>
+            <div class="flex items-center min-w-0 mr-2">
+                <span class="text-xl font-bold w-8 text-center flex-shrink-0 text-slate-500">-</span>
+                <span class="ml-2 sm:ml-4 text-slate-800 font-semibold text-base sm:text-lg truncate">${chinaData.flag || ''} ${chinaData.country}</span>
             </div>
-            <div class="text-right">
-                <span class="text-lg font-bold text-slate-800">${formatPrice(chinaData.price)}</span>
+            <div class="text-right flex-shrink-0">
+                <span class="text-base sm:text-lg font-bold text-slate-800">${formatPrice(chinaData.price)}</span>
             </div>`;
         ol.appendChild(li);
     }
