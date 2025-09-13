@@ -57,7 +57,6 @@ function parsePrice(str){
 }
 
 function createChart(model, period){
-  const graphContainer = document.getElementById('graph-container');
   const canvas = document.getElementById('priceChart');
   const placeholder = document.getElementById('graph-placeholder');
   canvas.style.display = 'block';
@@ -84,53 +83,60 @@ function createChart(model, period){
 
   capacities.forEach(cap=>{
     const capData = chartData.capacities[cap];
-    const color = colors[colorIndex%colors.length];
+    const color = colors[colorIndex % colors.length];
+
     datasets.push({
       label: cap,
-      data: capData.data.map((v,i)=>({x:chartData.dates[i], y:v.price})),
+      data: capData.data.map((v,i)=>({
+        x: dayjs(chartData.dates[i], 'MM/DD HH:mm').toDate(),
+        y: v.price
+      })),
       borderColor: color,
       borderWidth: 2.5,
-      fill:false,
-      pointRadius:0,
-      tension:0.1
+      fill: false,
+      pointRadius: 0,
+      tension: 0.1
     });
 
     if(capData.list_price){
       datasets.push({
         label: cap+' 定価',
-        data: capData.data.map((v,i)=>({x:chartData.dates[i], y:capData.list_price})),
+        data: capData.data.map((v,i)=>({
+          x: dayjs(chartData.dates[i], 'MM/DD HH:mm').toDate(),
+          y: capData.list_price
+        })),
         borderColor: color,
-        borderWidth:1.5,
-        borderDash:[5,5],
-        fill:false,
-        pointRadius:0
+        borderWidth: 1.5,
+        borderDash: [5,5],
+        fill: false,
+        pointRadius: 0
       });
     }
     colorIndex++;
   });
 
   chartInstance = new Chart(ctx,{
-    type:'line',
-    data:{datasets:datasets},
-    options:{
-      responsive:true,
-      maintainAspectRatio:false,
-      parsing:false,
-      scales:{
-        x:{ 
-          type:'time',
-          time:{tooltipFormat:'MM/DD HH:mm'},
-          title:{display:true,text:'日付'}
+    type: 'line',
+    data: { datasets: datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      parsing: false,
+      scales: {
+        x: { 
+          type: 'time',
+          time: { parser: 'MM/DD HH:mm', tooltipFormat: 'MM/DD HH:mm' },
+          title: { display: true, text: '日付' }
         },
-        y:{
-          title:{display:true,text:'価格 (円)'},
-          ticks:{callback:v=>'¥'+v.toLocaleString()}
+        y: {
+          title: { display: true, text: '価格 (円)' },
+          ticks: { callback: v=>'¥'+v.toLocaleString() }
         }
       },
-      plugins:{
-        tooltip:{
-          callbacks:{
-            label:function(ctx){
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: function(ctx){
               let label=ctx.dataset.label||'';
               if(label) label+=': ';
               label+='¥'+ctx.parsed.y.toLocaleString();
@@ -142,6 +148,7 @@ function createChart(model, period){
     }
   });
 }
+
 
 function selectPeriod(model, period, btn){
   document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
