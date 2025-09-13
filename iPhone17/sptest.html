@@ -104,8 +104,8 @@
 <h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
 
 <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
-    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
+    <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
+    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
 </div>
 
 <div class="mb-10">
@@ -319,12 +319,12 @@ function selectModel(model, btnElement) {
     const capacityContainer = document.getElementById('capacity-selector');
     capacityContainer.classList.add('visible');
     capacityContainer.innerHTML = '';
-    
+// ... existing code ... -->
     const capacities = modelCapacityMap[model] || [];
     capacities.forEach(cap => {
         const btn = document.createElement('button');
         btn.textContent = cap;
-        btn.className = 'capacity-selector-btn px-3 py-1.5 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
+        btn.className = 'capacity-selector-btn px-4 py-2 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
         btn.addEventListener('click', () => {
             document.querySelectorAll('.capacity-selector-btn').forEach(b => b.classList.remove('active-btn'));
             btn.classList.add('active-btn');
@@ -452,7 +452,7 @@ async function initializePage(){
         Object.keys(modelCapacityMap).forEach(model=>{
             const btn=document.createElement('button');
             btn.textContent=model;
-            btn.className='model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-4 py-2 text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
+            btn.className='model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-4 py-2 text-xs sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
             btn.addEventListener('click',() => selectModel(model, btn));
             modelSelector.appendChild(btn);
         });
@@ -533,4 +533,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
 
