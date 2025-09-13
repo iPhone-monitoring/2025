@@ -55,20 +55,28 @@ function parseDate(value, period, model) {
   if (!value) return null;
 
   if (model.includes("iPhone 14")) {
-    // iPhone14シリーズ → 全て日単位
+    // iPhone14 → 全て日単位
     return dayjs(value, "MM/DD").toDate();
   } else {
     if (period === "1週間" || period === "1ヶ月") {
-      // 1時間おきデータ
-      return dayjs(value.replace("時", ":00"), "MM/DD HH:mm").toDate();
+      // "09/22 00時" → "09/22 00:00"
+      const fixed = value.includes("時") ? value.replace("時", ":00") : value;
+      return dayjs(fixed, "MM/DD HH:mm").toDate();
     } else {
-      // 日単位データ
+      // "09/22" のみ
       return dayjs(value, "MM/DD").toDate();
     }
   }
 }
 
+
 function createChart(model, period){
+  console.log("===== デバッグ: 日付変換 =====");
+console.log("モデル:", model, "期間:", period);
+chartData.dates.forEach(d => {
+  console.log("元の値:", d, "→ 変換後:", parseDate(d, period, model));
+});
+
   const canvas = document.getElementById('priceChart');
   const placeholder = document.getElementById('graph-placeholder');
   canvas.style.display = 'block';
