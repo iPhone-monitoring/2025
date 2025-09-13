@@ -7,6 +7,12 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
+<script>
+  dayjs.extend(dayjs_plugin_utc);
+  dayjs.extend(dayjs_plugin_timezone);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-dayjs@2"></script>
 <style>
 html, body { height: 100%; margin:0; }
@@ -57,7 +63,10 @@ function createChart(model, period){
   canvas.style.display = 'block';
   placeholder.style.display = 'none';
 
-  if(chartInstance) chartInstance.destroy();
+  if(chartInstance){
+    chartInstance.destroy();
+    chartInstance = null;
+  }
   const ctx = canvas.getContext('2d');
 
   const chartData = allData[model]?.[period];
@@ -110,7 +119,7 @@ function createChart(model, period){
       scales:{
         x:{ 
           type:'time',
-          time:{parser:'MM/DD HH:mm', tooltipFormat:'MM/DD HH:mm'},
+          time:{tooltipFormat:'MM/DD HH:mm'},
           title:{display:true,text:'日付'}
         },
         y:{
@@ -164,7 +173,10 @@ function selectModel(model, btn){
   canvas.style.display='none';
   placeholder.style.display='flex';
   placeholder.textContent='期間を選択してください';
-  if(chartInstance) chartInstance.destroy();
+  if(chartInstance){
+    chartInstance.destroy();
+    chartInstance=null;
+  }
 }
 
 async function initializePage(){
@@ -186,22 +198,12 @@ async function initializePage(){
 
     const dataRows = rows.slice(4);
 
-    // 日付列を抽出し、全部00:00:00なら時間部分省略
+    // 日付列を抽出
     const dates = [];
-    let allZeroTime = true;
     dataRows.forEach(r=>{
       const cell = r[0]?.trim();
-      if(cell && cell.includes('/')) {
-        dates.push(cell);
-        const parts = cell.split(' ');
-        if(parts.length > 1 && parts[1] !== '00:00:00') allZeroTime = false;
-      }
+      if(cell && cell.includes('/')) dates.push(cell);
     });
-    if(allZeroTime){
-      for(let i=0;i<dates.length;i++){
-        dates[i] = dates[i].split(' ')[0];
-      }
-    }
 
     for(let c=1;c<rows[1].length;c++){
       const model = rows[1][c].trim();
@@ -215,9 +217,13 @@ async function initializePage(){
       }
 
       const period = rows[0][c].trim();
-      if(!allData[model][period]) allData[model][period]={capacities:{},dates:dates};
-      if(!allData[model][period].capacities[capacity]) allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
-      modelInfo[model].periods.add(period);
+      if(!allData[model][period]){
+        allData[model][period]={capacities:{},dates:dates};
+      }
+      if(!allData[model][period].capacities[capacity]){
+        allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
+        modelInfo[model].periods.add(period);
+      }
 
       const capDataArray = allData[model][period].capacities[capacity].data;
       dataRows.forEach(row=>{
@@ -226,7 +232,6 @@ async function initializePage(){
       });
     }
 
-    // 機種ボタン順
     const modelsOrder = ['iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro MAX','iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro MAX','iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro MAX'];
     modelsOrder.forEach(m=>{
       if(!allData[m]) return;
