@@ -3,108 +3,114 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPhone相場グラフ</title>
+<title>過去相場グラフ - iPhone相場</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
-body { font-family: 'Inter', 'Noto Sans JP', sans-serif; display:flex; flex-direction:column; min-height:100vh; }
+body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; }
 main { flex-grow:1; }
-.active-btn { background-color:#2563eb !important; color:white !important; border-color:#2563eb !important; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1);}
+.active-btn { background-color:#2563eb !important; color:white !important; border-color:#2563eb !important;
+  box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); }
 #period-selector:not(.visible){ display:none; }
-summary::-webkit-details-marker { display: none; }
-summary { list-style: none; }
-details[open] summary svg { transform: rotate(180deg); }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
+<header class="bg-white shadow-md sticky top-0 z-10">
+  <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+    <a href="../../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+  </div>
+</header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
-<h1 class="text-3xl font-bold text-slate-800 mb-6">過去の相場グラフ</h1>
+  <h1 class="text-3xl font-bold text-slate-800 mb-6">過去の相場グラフ</h1>
 
-<div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
+  <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2"></div>
     <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
-</div>
+  </div>
 
-<div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
-    <div id="graph-container" class="min-h-[400px]">
-        <p class="text-center p-8 text-slate-500">機種と期間を選択してください。</p>
+  <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+    <div id="graph-container" class="min-h-[400px] flex items-center justify-center">
+      <p class="text-center p-8 text-slate-500">機種と期間を選択してください。</p>
     </div>
-</div>
+  </div>
 </main>
 
 <footer class="bg-slate-800 text-white mt-auto">
-<div class="container mx-auto px-6 py-8 text-center">
-<p>&copy; 2025 iPhone相場. All rights reserved.</p>
-</div>
+  <div class="container mx-auto px-6 py-8 text-center">
+    <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+  </div>
 </footer>
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=761980576&single=true&output=csv';
 let allData = {};
+let modelInfo = {};
 let chartInstance = null;
 
-function parsePrice(str){
-    if(!str||typeof str!=='string') return null;
-    const n = parseFloat(str.replace(/[^0-9.]/g,''));
-    return isNaN(n)?null:n;
+function parsePrice(str){ 
+    if(!str) return null; 
+    const n = parseFloat(str.replace(/[^0-9]/g,'')); 
+    return isNaN(n)?null:n; 
 }
 
-function findColumns(rows, model, period){
-    let cols = [];
-    for(let c=1;c<rows[0].length;c++){
-        if(rows[1][c].trim()===model && rows[0][c].trim()===period) cols.push(c);
-    }
-    return cols;
+function selectPeriod(model, period, btn){
+    document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
+    btn.classList.add('active-btn');
+    createChart(model, period);
 }
 
-function findXAxis(rows, col){
-    for(let r=4;r<rows.length;r++){
-        let val = rows[r][col].trim();
-        if(val && isNaN(val)) return r; // 最初に出会う非数セル
-    }
-    return 4; // fallback
+function selectModel(model, btn){
+    document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
+    btn.classList.add('active-btn');
+    const periodSelector = document.getElementById('period-selector');
+    periodSelector.classList.add('visible');
+    periodSelector.innerHTML = '';
+    const periods = ['1週間','1ヶ月','3ヶ月','6ヶ月'].filter(p=>modelInfo[model].periods.includes(p));
+    periods.forEach(period=>{
+        const b = document.createElement('button');
+        b.textContent = period;
+        b.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
+        b.addEventListener('click',()=>selectPeriod(model,period,b));
+        periodSelector.appendChild(b);
+    });
+    document.getElementById('graph-container').innerHTML=`<p class="text-center p-8 text-slate-500">期間を選択してください。</p>`;
+    if(chartInstance) chartInstance.destroy();
 }
 
-function createChart(rows, model, period){
-    const cols = findColumns(rows, model, period);
-    if(cols.length===0){
-        document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-red-500">対象データがありません。</p>';
+function createChart(model, period){
+    const graphContainer=document.getElementById('graph-container');
+    if(chartInstance) chartInstance.destroy();
+    graphContainer.innerHTML='<canvas id="priceChart"></canvas>';
+    const ctx=document.getElementById('priceChart').getContext('2d');
+
+    const chartData=allData[model]?.[period];
+    if(!chartData || Object.keys(chartData.capacities).length===0){
+        graphContainer.innerHTML=`<p class="text-center p-8 text-slate-500">選択された期間のグラフデータがありません。</p>`;
         return;
     }
 
-    const datasets=[];
     const colors=['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
     let colorIndex=0;
-
-    cols.forEach(col=>{
-        const capacity = rows[2][col].trim();
-        const list_price = parsePrice(rows[3][col]);
-        const xRow = findXAxis(rows,col);
-        const data=[];
-        for(let r=xRow;r<rows.length;r++){
-            const dateStr = rows[r][0].trim();
-            const price = parsePrice(rows[r][col]);
-            if(dateStr && price!==null) data.push({x:dateStr,y:price});
-        }
-
+    const datasets=[];
+    Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(cap=>{
+        const capacityData=chartData.capacities[cap];
+        const color=colors[colorIndex%colors.length];
         datasets.push({
-            label:capacity,
-            data:data,
-            borderColor:colors[colorIndex%colors.length],
-            backgroundColor:colors[colorIndex%colors.length]+'33',
+            label:cap,
+            data:capacityData.data,
+            borderColor:color,
+            backgroundColor:color+'33',
+            borderWidth:2.5,
             tension:0.1,
             pointRadius:1.5,
-            pointHoverRadius:5,
-            borderWidth:2
+            pointHoverRadius:5
         });
-
-        if(list_price!==null){
+        if(capacityData.list_price){
             datasets.push({
-                label:`${capacity} 定価`,
-                data:data.map(d=>({x:d.x,y:list_price})),
-                borderColor:colors[colorIndex%colors.length],
+                label:`${cap} 定価`,
+                data:capacityData.data.map(d=>({x:d.x,y:capacityData.list_price})),
+                borderColor:color,
                 borderWidth:1.5,
                 borderDash:[5,5],
                 pointRadius:0,
@@ -114,11 +120,7 @@ function createChart(rows, model, period){
         colorIndex++;
     });
 
-    document.getElementById('graph-container').innerHTML='<canvas id="priceChart"></canvas>';
-    const ctx = document.getElementById('priceChart').getContext('2d');
-
-    if(chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx,{
+    chartInstance=new Chart(ctx,{
         type:'line',
         data:{datasets:datasets},
         options:{
@@ -127,14 +129,7 @@ function createChart(rows, model, period){
             scales:{
                 x:{
                     type:'time',
-                    time:{
-                        parser: val => val,
-                        tooltipFormat:'yyyy/MM/dd HH:mm',
-                        displayFormats:{
-                            day:'yyyy/MM/dd',
-                            hour:'MM/dd HH:mm'
-                        }
-                    },
+                    time:{ tooltipFormat:'MM/dd HH:mm', displayFormats:{ day:'MM/dd', hour:'MM/dd HH:mm'} },
                     title:{display:true,text:'日付'}
                 },
                 y:{
@@ -145,10 +140,10 @@ function createChart(rows, model, period){
             plugins:{
                 tooltip:{
                     callbacks:{
-                        label:ctx=>{
-                            let label=ctx.dataset.label||'';
+                        label:function(context){
+                            let label=context.dataset.label||'';
                             if(label) label+=': ';
-                            if(ctx.parsed.y!==null) label+='¥'+ctx.parsed.y.toLocaleString();
+                            if(context.parsed.y!==null) label+='¥'+context.parsed.y.toLocaleString();
                             return label;
                         }
                     }
@@ -159,58 +154,56 @@ function createChart(rows, model, period){
 }
 
 async function initializePage(){
+    const modelSelector=document.getElementById('model-selector');
+    const showError=msg=>{ modelSelector.innerHTML=''; document.getElementById('graph-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
     try{
-        const res=await fetch(CSV_URL);
-        const csvText=await res.text();
-        const rows = csvText.trim().split(/\r?\n/).map(r=>r.split(','));
+        const resp=await fetch(CSV_URL);
+        if(!resp.ok) throw new Error(resp.statusText);
+        const csvText=await resp.text();
+        const rows=csvText.trim().split(/\r?\n/).map(r=>r.split(','));
+        if(rows.length<5) throw new Error('CSVデータ不十分');
+        const dataRows=rows.slice(4);
 
-        const models=new Set();
-        for(let c=1;c<rows[0].length;c++) models.add(rows[1][c].trim());
-        const modelSelector=document.getElementById('model-selector');
-        modelSelector.innerHTML='';
-        models.forEach(model=>{
+        // 全モデル・期間を整理
+        for(let c=1;c<rows[0].length;c++){
+            const period=rows[0][c].trim();
+            const model=rows[1][c].trim();
+            const capacity=rows[2][c].trim();
+            const list_price=parsePrice(rows[3][c].trim());
+            if(!model||!period||!capacity) continue;
+
+            // 横軸データ探索
+            let colX=c-1;
+            while(colX>=0 && (!rows[4][colX] || !isNaN(rows[4][colX]))) colX--;
+            const xValues=[];
+            for(let r=4;r<rows.length;r++){
+                const v=rows[r][colX]?.trim();
+                if(!v) break;
+                const y=parsePrice(rows[r][c]);
+                if(y!==null) xValues.push({x:v,y:y});
+            }
+
+            if(!allData[model]) { allData[model]={}; modelInfo[model]={periods:new Set()}; }
+            if(!allData[model][period]) allData[model][period]={capacities:{}};
+            allData[model][period].capacities[capacity]={list_price:list_price,data:xValues};
+            modelInfo[model].periods.add(period);
+        }
+
+        // モデル選択ボタン
+        Object.keys(modelInfo).sort().forEach(model=>{
             const btn=document.createElement('button');
             btn.textContent=model;
             btn.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
-            btn.addEventListener('click',()=>{
-                document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
-                btn.classList.add('active-btn');
-
-                const periodSelector=document.getElementById('period-selector');
-                periodSelector.classList.add('visible');
-                periodSelector.innerHTML='';
-
-                const periods=new Set();
-                for(let c=1;c<rows[0].length;c++){
-                    if(rows[1][c].trim()===model) periods.add(rows[0][c].trim());
-                }
-
-                const order=['1週間','1ヶ月','3ヶ月','6ヶ月'];
-                order.forEach(p=>{
-                    if(periods.has(p)){
-                        const pBtn=document.createElement('button');
-                        pBtn.textContent=p;
-                        pBtn.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
-                        pBtn.addEventListener('click',()=>{ 
-                            document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
-                            pBtn.classList.add('active-btn');
-                            createChart(rows,model,p);
-                        });
-                        periodSelector.appendChild(pBtn);
-                    }
-                });
-                document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-slate-500">期間を選択してください。</p>';
-            });
+            btn.addEventListener('click',()=>selectModel(model,btn));
             modelSelector.appendChild(btn);
         });
 
-    }catch(e){
-        console.error(e);
-        document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-red-500">データ取得に失敗しました</p>';
-    }
+        if(Object.keys(modelInfo).length===0) showError('解析できるデータなし');
+
+    }catch(e){ console.error(e); showError('データ取得失敗:'+e.message); }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{initializePage();});
+document.addEventListener('DOMContentLoaded',()=>{ initializePage(); });
 </script>
 </body>
 </html>
