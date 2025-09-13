@@ -33,11 +33,15 @@ main { flex-grow:1; display:flex; flex-direction:column; padding:1.5rem; }
 <header class="bg-white shadow-md p-4 text-xl font-bold text-blue-600">iPhone相場</header>
 
 <main>
+  <h2 class="text-center text-lg font-semibold text-slate-700 mb-2">1. 機種を選択</h2>
   <div class="flex flex-wrap justify-center gap-2 mb-4" id="model-selector"></div>
+  
+  <h2 class="text-center text-lg font-semibold text-slate-700 my-2" id="period-title" style="display: none;">2. 期間を選択</h2>
   <div class="flex flex-wrap justify-center gap-2 mb-4" id="period-selector"></div>
+  
   <div id="graph-container">
     <canvas id="priceChart" style="display:none;"></canvas>
-    <div id="graph-placeholder">機種と期間を選択してください</div>
+    <div id="graph-placeholder">機種を選択してください</div>
   </div>
 </main>
 
@@ -77,17 +81,19 @@ function createChart(model, period){
     canvas.style.display='none';
     return;
   }
-
-  const allDates = new Set();
-  Object.values(chartData.capacities).forEach(cap => {
-      cap.data.forEach(point => allDates.add(point.date));
-  });
-
-  const labels = Array.from(allDates).sort((a, b) => {
-      const dateA = dayjs(a, 'MM/DD HH:mm');
-      const dateB = dayjs(b, 'MM/DD HH:mm');
-      return dateA.valueOf() - dateB.valueOf();
-  });
+  
+  // ✅ FIX: Get labels directly from the first capacity's data.
+  // The parsing logic now ensures all capacities have the same dates in the same order.
+  // This respects the original order from the CSV file.
+  const firstCapacityKey = Object.keys(chartData.capacities)[0];
+  if (!firstCapacityKey) {
+    placeholder.textContent='選択された期間のグラフデータがありません。';
+    placeholder.style.display='flex';
+    canvas.style.display='none';
+    return;
+  }
+  
+  const labels = chartData.capacities[firstCapacityKey].data.map(point => point.date);
 
   const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
   let colorIndex = 0;
@@ -98,8 +104,8 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
-    const priceMap = new Map(capData.data.map(p => [p.date, p.price]));
-    const alignedPriceData = labels.map(date => priceMap.get(date) ?? null);
+    // ✅ FIX: Data is now pre-aligned. Just extract the prices.
+    const alignedPriceData = capData.data.map(point => point.price);
 
     datasets.push({
       label: cap,
@@ -108,7 +114,8 @@ function createChart(model, period){
       borderWidth: 2.5,
       fill: false,
       pointRadius: 0,
-      tension: 0.1
+      tension: 0.1,
+      spanGaps: true
     });
 
     if(capData.list_price){
@@ -179,6 +186,8 @@ function selectModel(model, btn){
   document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
   btn.classList.add('active-btn');
 
+  document.getElementById('period-title').style.display = 'block';
+
   const periodSelector = document.getElementById('period-selector');
   periodSelector.innerHTML='';
 
@@ -222,85 +231,73 @@ async function initializePage(){
 
     if(rows.length < 4) throw new Error('CSVデータが不十分です。');
 
-    // Headers are now the first 3 rows. Data starts from the 4th row.
     const modelsHeader = rows[0];
     const capacitiesHeader = rows[1];
     const listPricesHeader = rows[2];
     const dataRows = rows.slice(3);
-
-    // ✅ NEW: Configuration object for periods based on model series and their data ranges.
-    const periodConfig = {
+    
+    const configBySeries = {
       'iPhone 14': {
-        '1週間': { dateCol: 0, rows: 8 },    // A4:A11 in sheet
-        '1ヶ月': { dateCol: 0, rows: 31 },   // A4:A34 in sheet
-        '3ヶ月': { dateCol: 0, rows: 92 },   // A4:A95 in sheet
-        '6ヶ月': { dateCol: 0, rows: 182 }  // A4:A185 in sheet
+        '1週間': { dateCol: 0, rows: 8, priceColStart: 1, priceColEnd: 12 },
+        '1ヶ月': { dateCol: 0, rows: 31, priceColStart: 1, priceColEnd: 12 },
+        '3ヶ月': { dateCol: 0, rows: 92, priceColStart: 1, priceColEnd: 12 },
+        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 }
       },
       'iPhone 15': {
-        '1週間': { dateCol: 13, rows: 192 }, // N4:N195 in sheet
-        '1ヶ月': { dateCol: 13, rows: 744 }, // N4:N747 in sheet
-        '3ヶ月': { dateCol: 27, rows: 92 },  // AB4:AB95 in sheet
-        '6ヶ月': { dateCol: 27, rows: 182 }  // AB4:AB185 in sheet
+        '1週間': { dateCol: 13, rows: 192, priceColStart: 14, priceColEnd: 26 },
+        '1ヶ月': { dateCol: 13, rows: 744, priceColStart: 14, priceColEnd: 26 },
+        '3ヶ月': { dateCol: 27, rows: 92, priceColStart: 28, priceColEnd: 40 },
+        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 }
       },
       'iPhone 16': {
-        '1週間': { dateCol: 41, rows: 192 }, // AP4:AP195 in sheet
-        '1ヶ月': { dateCol: 41, rows: 744 }, // AP4:AP747 in sheet
-        '3ヶ月': { dateCol: 55, rows: 92 },  // BD4:BD95 in sheet
-        '6ヶ月': { dateCol: 55, rows: 182 }  // BD4:BD185 in sheet
+        '1週間': { dateCol: 41, rows: 192, priceColStart: 42, priceColEnd: 54 },
+        '1ヶ月': { dateCol: 41, rows: 744, priceColStart: 42, priceColEnd: 54 },
+        '3ヶ月': { dateCol: 55, rows: 92, priceColStart: 56, priceColEnd: 68 },
+        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 }
       }
     };
 
-    // Iterate through each column to find model/capacity pairs
-    for (let c = 1; c < modelsHeader.length; c++) {
-      const model = modelsHeader[c]?.trim();
-      const capacity = capacitiesHeader[c]?.trim();
-      const list_price = parsePrice(listPricesHeader[c]);
-
-      if (!model || model === '機種' || !capacity) continue;
-
-      // Determine which model series this column belongs to
-      let seriesKey = null;
-      if (model.includes('iPhone 14')) seriesKey = 'iPhone 14';
-      else if (model.includes('iPhone 15')) seriesKey = 'iPhone 15';
-      else if (model.includes('iPhone 16')) seriesKey = 'iPhone 16';
-
-      if (!seriesKey) continue; // Skip if it's not a recognized series
-
-      const seriesConfig = periodConfig[seriesKey];
-
-      // Programmatically create data entries for each period (1週間, 1ヶ月, etc.)
-      for (const periodName in seriesConfig) {
-        const config = seriesConfig[periodName];
-        const dateColIdx = config.dateCol;
-        const numRows = config.rows;
-
-        // Initialize data structures in the main `allData` object
-        if (!allData[model]) {
-          allData[model] = {};
-          modelInfo[model] = { periods: new Set() };
-        }
-        if (!allData[model][periodName]) {
-          allData[model][periodName] = { capacities: {} };
-        }
-        if (!allData[model][periodName].capacities[capacity]) {
-          allData[model][periodName].capacities[capacity] = {
-              list_price: list_price,
-              data: []
-          };
-        }
-        modelInfo[model].periods.add(periodName);
-        
-        const currentSeriesData = allData[model][periodName].capacities[capacity].data;
+    for (const seriesKey in configBySeries) {
+      const seriesPeriods = configBySeries[seriesKey];
+      for (const periodName in seriesPeriods) {
+        const config = seriesPeriods[periodName];
+        const { dateCol, rows: numRows, priceColStart, priceColEnd } = config;
         const relevantRows = dataRows.slice(0, numRows);
 
-        // Extract date and price from the correct columns for the specified number of rows
-        relevantRows.forEach(row => {
-          const dateStr = row[dateColIdx]?.trim();
-          const price = parsePrice(row[c]);
-          if(dateStr && price !== null) {
-              currentSeriesData.push({ date: dateStr, price: price });
+        for (let c = priceColStart; c <= priceColEnd; c++) {
+          const model = modelsHeader[c]?.trim();
+          const capacity = capacitiesHeader[c]?.trim();
+          const list_price = parsePrice(listPricesHeader[c]);
+
+          if (!model || model === '機種' || !capacity) continue;
+          
+          if (!allData[model]) {
+            allData[model] = {};
+            modelInfo[model] = { periods: new Set() };
           }
-        });
+          if (!allData[model][periodName]) {
+            allData[model][periodName] = { capacities: {} };
+          }
+          if (!allData[model][periodName].capacities[capacity]) {
+            allData[model][periodName].capacities[capacity] = {
+                list_price: list_price,
+                data: []
+            };
+          }
+          modelInfo[model].periods.add(periodName);
+          
+          const currentSeriesData = allData[model][periodName].capacities[capacity].data;
+          
+          relevantRows.forEach(row => {
+            const dateStr = row[dateCol]?.trim();
+            // ✅ FIX: Push data point as long as a date exists, even if price is null.
+            // This ensures all data arrays for a given period have the same length and order.
+            if (dateStr) {
+                const price = parsePrice(row[c]);
+                currentSeriesData.push({ date: dateStr, price: price });
+            }
+          });
+        }
       }
     }
 
