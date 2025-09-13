@@ -7,8 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
-html, body { height:100%; margin:0; }
-body { font-family:'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
+html, body { height: 100%; margin:0; }
+body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
 header, footer { flex-shrink:0; }
 main { flex-grow:1; display:flex; flex-direction:column; padding:1.5rem; }
 .model-btn, .period-btn { cursor:pointer; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; border:1px solid #cbd5e1; transition:0.2s; background:#fff; color:#374151; }
@@ -57,10 +57,6 @@ function createChart(model, period){
     chartInstance = null;
   }
 
-  canvas.style.display = 'block';
-  placeholder.style.display = 'none';
-  const ctx = canvas.getContext('2d');
-
   const chartData = allData[model]?.[period];
   if(!chartData){
     placeholder.textContent='選択された期間のグラフデータがありません。';
@@ -69,41 +65,20 @@ function createChart(model, period){
     return;
   }
 
-  const capacities = Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b));
-  if(capacities.length===0){
-    placeholder.textContent='対象容量のデータがありません';
-    placeholder.style.display='flex';
-    canvas.style.display='none';
-    return;
-  }
-
-  // 横軸ラベル判定（時間含めるかどうか）
-  let hasNonMidnight = false;
-  const firstCap = chartData.capacities[capacities[0]];
-  for(const point of firstCap.data){
-    const timePart = point.date.split(' ')[1];
-    if(timePart && timePart !== '0:00:00'){
-      hasNonMidnight = true;
-      break;
-    }
-  }
-
-  const labels = firstCap.data.map(point=>{
-    const [dateStr, timeStr] = point.date.split(' ');
-    const [year, month, day] = dateStr.split('/');
-    if(hasNonMidnight){
-      const [hour, minute] = timeStr.split(':');
-      return `${month}/${day} ${hour.padStart(2,'0')}:${minute.padStart(2,'0')}`;
-    } else {
-      return `${year}/${month}/${day}`;
-    }
+  // 横軸ラベル（日付または日付+時間）
+  const firstCap = Object.keys(chartData.capacities)[0];
+  const firstColData = chartData.capacities[firstCap].data;
+  const showTime = firstColData.some(p=>!p.date.endsWith('0:00:00'));
+  const labels = firstColData.map(p=>{
+    if(showTime) return p.date;
+    return p.date.split(' ')[0];
   });
 
   const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
   let colorIndex = 0;
   const datasets = [];
 
-  capacities.forEach(cap=>{
+  Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b)).forEach(cap=>{
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
@@ -123,34 +98,43 @@ function createChart(model, period){
         data: new Array(labels.length).fill(capData.list_price),
         borderColor: color,
         borderWidth: 1.5,
-        borderDash:[5,5],
-        fill:false,
-        pointRadius:0,
-        tension:0.1
+        borderDash: [5,5],
+        fill: false,
+        pointRadius: 0,
+        tension: 0.1
       });
     }
+
     colorIndex++;
   });
 
-  chartInstance = new Chart(ctx,{
+  chartInstance = new Chart(canvas.getContext('2d'),{
     type:'line',
     data:{ labels, datasets },
     options:{
       responsive:true,
       maintainAspectRatio:false,
       scales:{
-        x:{ type:'category', title:{ display:true, text:'日付' }, ticks:{ autoSkip:true, maxRotation:0, minRotation:0, maxTicksLimit:10 } },
-        y:{ title:{ display:true, text:'価格 (円)' }, ticks:{ callback:v=>'¥'+v.toLocaleString() } }
+        x:{ type:'category', title:{display:true,text:'日付'}, ticks:{autoSkip:true,maxTicksLimit:10} },
+        y:{ title:{display:true,text:'価格 (円)'}, ticks:{callback:v=>'¥'+v.toLocaleString()} }
       },
       plugins:{
         tooltip:{
           callbacks:{
-            label: ctx=>ctx.dataset.label+' : ¥'+ctx.parsed.y.toLocaleString()
+            label:function(ctx){
+              let label=ctx.dataset.label||'';
+              if(label) label+=': ';
+              label+='¥'+ctx.parsed.y.toLocaleString();
+              return label;
+            }
           }
         }
       }
     }
   });
+
+  canvas.style.display='block';
+  placeholder.style.display='none';
 }
 
 function selectPeriod(model, period, btn){
@@ -166,14 +150,12 @@ function selectModel(model, btn){
   const periodSelector = document.getElementById('period-selector');
   periodSelector.innerHTML='';
 
-  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月'];
-  const periods = Array.from(modelInfo[model].periods).sort((a,b)=> periodOrder.indexOf(a)-periodOrder.indexOf(b));
-
+  const periods = Array.from(modelInfo[model].periods);
   periods.forEach(p=>{
-    const b=document.createElement('button');
-    b.textContent=p;
+    const b = document.createElement('button');
+    b.textContent = p;
     b.className='period-btn';
-    b.addEventListener('click',()=>selectPeriod(model,p,b));
+    b.addEventListener('click', ()=>selectPeriod(model,p,b));
     periodSelector.appendChild(b);
   });
 
@@ -182,10 +164,7 @@ function selectModel(model, btn){
   canvas.style.display='none';
   placeholder.style.display='flex';
   placeholder.textContent='期間を選択してください';
-  if(chartInstance){
-    chartInstance.destroy();
-    chartInstance=null;
-  }
+  if(chartInstance){ chartInstance.destroy(); chartInstance=null; }
 }
 
 async function initializePage(){
@@ -198,53 +177,61 @@ async function initializePage(){
   };
 
   try{
-    const response = await fetch(CSV_URL);
-    if(!response.ok) throw new Error('CSV取得失敗: '+response.statusText);
-    const text = await response.text();
+    const resp = await fetch(CSV_URL);
+    if(!resp.ok) throw new Error('CSV取得失敗');
+    const text = await resp.text();
     const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
-    if(rows.length<5) throw new Error('CSVデータが不十分です');
+    if(rows.length<5) throw new Error('CSVデータ不足');
 
     const headerRows = rows.slice(0,4);
     const dataRows = rows.slice(4);
 
-    for(let c=1; c<headerRows[0].length; c++){
-      const period = headerRows[0][c].trim();
-      const model = headerRows[1][c].trim();
-      const capacity = headerRows[2][c].trim();
-      const list_price = parsePrice(headerRows[3][c]);
+    const periodsHeader = headerRows[0];
+    const modelsHeader = headerRows[1];
+    const capacitiesHeader = headerRows[2];
+    const listPricesHeader = headerRows[3];
 
-      if(!period || !model || !capacity) continue;
+    for(let c=1;c<modelsHeader.length;c++){
+      const model = modelsHeader[c]?.trim();
+      if(!model || model==='機種') continue;
+      const period = periodsHeader[c]?.trim();
+      const capacity = capacitiesHeader[c]?.trim();
+      const list_price = parsePrice(listPricesHeader[c]);
+      if(!period || !capacity) continue;
 
-      if(!allData[model]){ allData[model]={}; modelInfo[model]={ periods:new Set() }; }
+      if(!allData[model]){ allData[model]={}; modelInfo[model]={periods:new Set()}; }
       if(!allData[model][period]) allData[model][period]={ capacities:{} };
-      if(!allData[model][period].capacities[capacity]) allData[model][period].capacities[capacity]={ list_price:list_price, data:[] };
-
+      if(!allData[model][period].capacities[capacity]) allData[model][period].capacities[capacity]={ list_price, data:[] };
       modelInfo[model].periods.add(period);
-      const seriesData = allData[model][period].capacities[capacity].data;
 
+      const seriesData = allData[model][period].capacities[capacity].data;
       dataRows.forEach(row=>{
-        const date = row[0].trim();
+        const date = row[0]?.trim();
         const price = parsePrice(row[c]);
-        if(price !== null) seriesData.push({ date, price });
+        if(date && price !== null) seriesData.push({ date, price });
       });
     }
 
-    // モデルボタン生成
-    Object.keys(allData).forEach(model=>{
+    // モデルボタン生成（指定順で）
+    const modelsOrder = ['iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro MAX','iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro MAX','iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro MAX'];
+    modelsOrder.forEach(m=>{
+      if(!allData[m]) return;
       const b=document.createElement('button');
-      b.textContent=model;
+      b.textContent=m;
       b.className='model-btn';
-      b.addEventListener('click',()=>selectModel(model,b));
+      b.addEventListener('click',()=>selectModel(m,b));
       modelSelector.appendChild(b);
     });
 
+    if(Object.keys(modelInfo).length===0) showError('データがありません');
+
   }catch(e){
     console.error(e);
-    showError('データ読み込みに失敗しました');
+    showError('データ取得・処理失敗: '+e.message);
   }
 }
 
-initializePage();
+document.addEventListener('DOMContentLoaded',initializePage);
 </script>
 </body>
 </html>
