@@ -7,9 +7,13 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+<!-- ✅ FIX: Add the CustomParseFormat plugin for Day.js -->
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
 <script>
+  // ✅ FIX: Extend Day.js with the new plugin
+  dayjs.extend(dayjs_plugin_customParseFormat);
   dayjs.extend(dayjs_plugin_utc);
   dayjs.extend(dayjs_plugin_timezone);
 </script>
@@ -85,8 +89,6 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
-    // **FIXED**: Changed how data is mapped to the chart
-    // It now uses the {date, price} objects created during parsing.
     datasets.push({
       label: cap,
       data: capData.data.map(point => ({
@@ -127,7 +129,9 @@ function createChart(model, period){
       scales: {
         x: {
           type: 'time',
-          time: { parser: 'MM/DD HH:mm', tooltipFormat: 'MM/DD HH:mm' },
+          time: {
+            tooltipFormat: 'MM/DD HH:mm'
+          },
           title: { display: true, text: '日付' }
         },
         y: {
@@ -204,7 +208,6 @@ async function initializePage(){
 
     if(rows.length<5) throw new Error('CSVデータが不十分です。');
 
-    // **REWRITTEN**: The entire parsing logic is changed here for clarity and correctness.
     const headerRows = rows.slice(0, 4);
     const dataRows = rows.slice(4);
 
@@ -213,7 +216,6 @@ async function initializePage(){
     const capacities = headerRows[2];
     const listPrices = headerRows[3];
 
-    // Loop through each data COLUMN
     for (let c = 1; c < models.length; c++) {
       const model = models[c]?.trim();
       const capacity = capacities[c]?.trim();
@@ -222,7 +224,6 @@ async function initializePage(){
 
       if (!model || !capacity || !period) continue;
 
-      // Initialize data structures if they don't exist
       if (!allData[model]) {
         allData[model] = {};
         modelInfo[model] = { periods: new Set() };
@@ -233,19 +234,17 @@ async function initializePage(){
       if (!allData[model][period].capacities[capacity]) {
         allData[model][period].capacities[capacity] = {
             list_price: list_price,
-            data: [] // Data will be stored as {date, price} objects
+            data: []
         };
       }
       modelInfo[model].periods.add(period);
       
       const currentSeriesData = allData[model][period].capacities[capacity].data;
 
-      // Loop through each data ROW for the current column
       dataRows.forEach(row => {
         const dateStr = row[0]?.trim();
         const price = parsePrice(row[c]);
         
-        // Only add a data point if BOTH date and price are valid for this row
         if (dateStr && price !== null) {
           currentSeriesData.push({ date: dateStr, price: price });
         }
