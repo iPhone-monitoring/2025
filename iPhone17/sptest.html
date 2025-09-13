@@ -3,31 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>過去の相場グラフ - iPhone相場</title>
+<title>iPhone相場グラフ</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <style>
-body { font-family:'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; }
+body { font-family: 'Inter', 'Noto Sans JP', sans-serif; display:flex; flex-direction:column; min-height:100vh; }
 main { flex-grow:1; }
-.active-btn { background-color:#2563eb !important; color:white !important; border-color:#2563eb !important; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); }
+.active-btn { background-color:#2563eb !important; color:white !important; border-color:#2563eb !important; box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1);}
 #period-selector:not(.visible){ display:none; }
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
+details[open] summary svg { transform: rotate(180deg); }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
-<header class="bg-white shadow-md sticky top-0 z-10">
-<div class="container mx-auto px-6 py-4 flex justify-between items-center">
-<a href="../../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
-</div>
-</header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
 <h1 class="text-3xl font-bold text-slate-800 mb-6">過去の相場グラフ</h1>
 
 <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4">
-        <p class="text-slate-500">データを読み込んでいます...</p>
-    </div>
+    <div id="model-selector" class="mb-4 flex flex-wrap justify-center gap-2 border-b pb-4"></div>
     <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4"></div>
 </div>
 
@@ -46,69 +42,82 @@ main { flex-grow:1; }
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=761980576&single=true&output=csv';
-
 let allData = {};
-let modelInfo = {};
 let chartInstance = null;
 
 function parsePrice(str){
-    if(!str || typeof str!=='string') return null;
+    if(!str||typeof str!=='string') return null;
     const n = parseFloat(str.replace(/[^0-9.]/g,''));
     return isNaN(n)?null:n;
 }
 
-function createChart(model, period){
-    const graphContainer = document.getElementById('graph-container');
-    if(chartInstance) chartInstance.destroy();
-    graphContainer.innerHTML = '<canvas id="priceChart"></canvas>';
-    const ctx = document.getElementById('priceChart').getContext('2d');
+function findColumns(rows, model, period){
+    let cols = [];
+    for(let c=1;c<rows[0].length;c++){
+        if(rows[1][c].trim()===model && rows[0][c].trim()===period) cols.push(c);
+    }
+    return cols;
+}
 
-    const chartData = allData[model]?.[period];
-    if(!chartData){
-        graphContainer.innerHTML = `<p class="text-center p-8 text-slate-500">選択された期間のデータがありません。</p>`;
+function findXAxis(rows, col){
+    for(let r=4;r<rows.length;r++){
+        let val = rows[r][col].trim();
+        if(val && isNaN(val)) return r; // 最初に出会う非数セル
+    }
+    return 4; // fallback
+}
+
+function createChart(rows, model, period){
+    const cols = findColumns(rows, model, period);
+    if(cols.length===0){
+        document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-red-500">対象データがありません。</p>';
         return;
     }
 
-    const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
-    let colorIndex = 0;
-    const datasets = [];
-    const sortedCapacities = Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b));
-    if(sortedCapacities.length===0){
-        graphContainer.innerHTML = `<p class="text-center p-8 text-slate-500">容量データがありません。</p>`;
-        return;
-    }
+    const datasets=[];
+    const colors=['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
+    let colorIndex=0;
 
-    sortedCapacities.forEach(capacity=>{
-        const capacityData = chartData.capacities[capacity];
-        const color = colors[colorIndex%colors.length];
+    cols.forEach(col=>{
+        const capacity = rows[2][col].trim();
+        const list_price = parsePrice(rows[3][col]);
+        const xRow = findXAxis(rows,col);
+        const data=[];
+        for(let r=xRow;r<rows.length;r++){
+            const dateStr = rows[r][0].trim();
+            const price = parsePrice(rows[r][col]);
+            if(dateStr && price!==null) data.push({x:dateStr,y:price});
+        }
 
-        if(capacityData.data.length>0){
+        datasets.push({
+            label:capacity,
+            data:data,
+            borderColor:colors[colorIndex%colors.length],
+            backgroundColor:colors[colorIndex%colors.length]+'33',
+            tension:0.1,
+            pointRadius:1.5,
+            pointHoverRadius:5,
+            borderWidth:2
+        });
+
+        if(list_price!==null){
             datasets.push({
-                label: capacity,
-                data: capacityData.data,
-                borderColor: color,
-                backgroundColor: color+'33',
-                borderWidth:2.5,
-                tension:0.1,
-                pointRadius:1.5,
-                pointHoverRadius:5
+                label:`${capacity} 定価`,
+                data:data.map(d=>({x:d.x,y:list_price})),
+                borderColor:colors[colorIndex%colors.length],
+                borderWidth:1.5,
+                borderDash:[5,5],
+                pointRadius:0,
+                fill:false
             });
-
-            if(capacityData.list_price!==null){
-                datasets.push({
-                    label: `${capacity} 定価`,
-                    data: capacityData.data.map(d=>({x:d.x,y:capacityData.list_price})),
-                    borderColor: color,
-                    borderWidth:1.5,
-                    borderDash:[5,5],
-                    pointRadius:0,
-                    fill:false
-                });
-            }
         }
         colorIndex++;
     });
 
+    document.getElementById('graph-container').innerHTML='<canvas id="priceChart"></canvas>';
+    const ctx = document.getElementById('priceChart').getContext('2d');
+
+    if(chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx,{
         type:'line',
         data:{datasets:datasets},
@@ -119,23 +128,27 @@ function createChart(model, period){
                 x:{
                     type:'time',
                     time:{
+                        parser: val => val,
                         tooltipFormat:'yyyy/MM/dd HH:mm',
-                        displayFormats:{day:'yyyy/MM/dd', hour:'MM/dd HH:mm'}
+                        displayFormats:{
+                            day:'yyyy/MM/dd',
+                            hour:'MM/dd HH:mm'
+                        }
                     },
                     title:{display:true,text:'日付'}
                 },
                 y:{
-                    title:{display:true,text:'価格 (円)'},
-                    ticks:{callback:value=>'¥'+value.toLocaleString()}
+                    title:{display:true,text:'価格(円)'},
+                    ticks:{callback:v=>'¥'+v.toLocaleString()}
                 }
             },
             plugins:{
                 tooltip:{
                     callbacks:{
-                        label:function(context){
-                            let label = context.dataset.label||'';
+                        label:ctx=>{
+                            let label=ctx.dataset.label||'';
                             if(label) label+=': ';
-                            if(context.parsed.y!==null) label+='¥'+context.parsed.y.toLocaleString();
+                            if(ctx.parsed.y!==null) label+='¥'+ctx.parsed.y.toLocaleString();
                             return label;
                         }
                     }
@@ -145,95 +158,59 @@ function createChart(model, period){
     });
 }
 
-function selectPeriod(model,period,btn){
-    document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
-    btn.classList.add('active-btn');
-    createChart(model,period);
-}
-
-function selectModel(model,btn){
-    document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
-    btn.classList.add('active-btn');
-
-    const periodSelector = document.getElementById('period-selector');
-    periodSelector.classList.add('visible');
-    periodSelector.innerHTML='';
-
-    const periodsOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月'];
-    const periods = Array.from(modelInfo[model].periods)
-                         .sort((a,b)=>periodsOrder.indexOf(a)-periodsOrder.indexOf(b));
-    periods.forEach(period=>{
-        const pbtn = document.createElement('button');
-        pbtn.textContent = period;
-        pbtn.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
-        pbtn.addEventListener('click',()=>selectPeriod(model,period,pbtn));
-        periodSelector.appendChild(pbtn);
-    });
-
-    document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-slate-500">期間を選択してください。</p>';
-    if(chartInstance) chartInstance.destroy();
-}
-
 async function initializePage(){
-    const modelSelector = document.getElementById('model-selector');
-    const showError = msg=>{ modelSelector.innerHTML=''; document.getElementById('graph-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
-
     try{
-        const response = await fetch(CSV_URL);
-        if(!response.ok) throw new Error('CSV取得エラー: '+response.statusText);
-        const csvText = await response.text();
+        const res=await fetch(CSV_URL);
+        const csvText=await res.text();
         const rows = csvText.trim().split(/\r?\n/).map(r=>r.split(','));
-        if(rows.length<5) throw new Error('CSVデータが不十分です。');
 
-        const dataRows = rows.slice(4);
-        for(let c=1;c<rows[0].length;c++){
-            const period = rows[0][c].trim();
-            const model = rows[1][c].trim();
-            const capacity = rows[2][c].trim();
-            const list_price=parsePrice(rows[3][c]);
-
-            if(!model || model==='機種' || !capacity) continue;
-
-            if(!allData[model]){
-                allData[model]={};
-                modelInfo[model]={periods:new Set()};
-            }
-            if(!allData[model][period]){
-                allData[model][period]={capacities:{}};
-            }
-            if(!allData[model][period].capacities[capacity]){
-                allData[model][period].capacities[capacity]={list_price:list_price,data:[]};
-                modelInfo[model].periods.add(period);
-            }
-
-            const targetDataArray = allData[model][period].capacities[capacity].data;
-            dataRows.forEach(row=>{
-                const dateStr=row[0].trim();
-                const price=parsePrice(row[c]);
-                if(dateStr && price!==null){
-                    targetDataArray.push({x:dateStr,y:price});
-                }
-            });
-        }
-
+        const models=new Set();
+        for(let c=1;c<rows[0].length;c++) models.add(rows[1][c].trim());
+        const modelSelector=document.getElementById('model-selector');
         modelSelector.innerHTML='';
-        Object.keys(modelInfo).filter(m=>m).sort().forEach(model=>{
-            const btn = document.createElement('button');
+        models.forEach(model=>{
+            const btn=document.createElement('button');
             btn.textContent=model;
             btn.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border';
-            btn.addEventListener('click',()=>selectModel(model,btn));
+            btn.addEventListener('click',()=>{
+                document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
+                btn.classList.add('active-btn');
+
+                const periodSelector=document.getElementById('period-selector');
+                periodSelector.classList.add('visible');
+                periodSelector.innerHTML='';
+
+                const periods=new Set();
+                for(let c=1;c<rows[0].length;c++){
+                    if(rows[1][c].trim()===model) periods.add(rows[0][c].trim());
+                }
+
+                const order=['1週間','1ヶ月','3ヶ月','6ヶ月'];
+                order.forEach(p=>{
+                    if(periods.has(p)){
+                        const pBtn=document.createElement('button');
+                        pBtn.textContent=p;
+                        pBtn.className='px-4 py-2 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
+                        pBtn.addEventListener('click',()=>{ 
+                            document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
+                            pBtn.classList.add('active-btn');
+                            createChart(rows,model,p);
+                        });
+                        periodSelector.appendChild(pBtn);
+                    }
+                });
+                document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-slate-500">期間を選択してください。</p>';
+            });
             modelSelector.appendChild(btn);
         });
 
-        if(Object.keys(modelInfo).length===0) showError('解析できる機種データがありません。CSV形式を確認してください。');
-
     }catch(e){
         console.error(e);
-        showError('データ取得または処理に失敗しました。<br>エラー:'+e.message);
+        document.getElementById('graph-container').innerHTML='<p class="text-center p-8 text-red-500">データ取得に失敗しました</p>';
     }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{ initializePage(); });
+document.addEventListener('DOMContentLoaded',()=>{initializePage();});
 </script>
 </body>
 </html>
