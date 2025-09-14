@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>iPhone相場</title>
+<title>iPhone 実質ドル円レート比較</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 html, body { min-height: 100vh; margin:0; }
@@ -17,6 +17,12 @@ summary {
 }
 details[open] summary svg {
     transform: rotate(180deg);
+}
+.sort-btn.active {
+    background-color:#2563eb;
+    color:white;
+    border-color: #2563eb;
+    box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1);
 }
 </style>
 </head>
@@ -88,7 +94,40 @@ details[open] summary svg {
 </header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
- <!-- メインコンテンツはここに追記 -->
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">実質ドル円レート比較</h1>
+
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+        <div class="flex flex-wrap justify-center items-center gap-4">
+            <span class="font-semibold text-slate-600">並び替え:</span>
+            <div class="flex flex-wrap justify-center items-center gap-2">
+                <div class="flex items-center gap-2">
+                     <button class="sort-btn px-3 py-1.5 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border" data-key="id" data-order="asc">昇順</button>
+                     <button class="sort-btn px-3 py-1.5 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border" data-key="id" data-order="desc">降順</button>
+                </div>
+                 <div class="flex items-center gap-2">
+                     <button class="sort-btn px-3 py-1.5 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border" data-key="rate" data-order="asc">ドル円レート 昇順</button>
+                     <button class="sort-btn px-3 py-1.5 text-sm font-semibold rounded-md transition-colors bg-slate-100 text-slate-700 hover:bg-slate-200 border" data-key="rate" data-order="desc">ドル円レート 降順</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="table-container" class="overflow-x-auto bg-white rounded-lg shadow-md">
+        <table class="w-full min-w-[640px] text-sm text-slate-500">
+            <thead class="text-xs text-slate-700 uppercase bg-slate-100">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left">機種</th>
+                    <th scope="col" class="px-6 py-3 text-center">アメリカ価格</th>
+                    <th scope="col" class="px-6 py-3 text-center">日本価格</th>
+                    <th scope="col" class="px-6 py-3 text-center">実質ドル円レート</th>
+                </tr>
+            </thead>
+            <tbody id="table-body">
+                <!-- Data will be populated by JS -->
+            </tbody>
+        </table>
+         <div id="table-placeholder" class="text-center p-8 text-slate-500">データを読み込み中...</div>
+    </div>
 </main>
 
 <!-- フッター -->
@@ -100,8 +139,15 @@ details[open] summary svg {
 
 
 <script>
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=1112979601&single=true&output=csv';
+
+let tableData = [];
+let currentSort = { key: 'id', order: 'asc' };
+let minRateValue = null;
+let maxRateValue = null;
+
 function setupEventListeners() {
-    // デスクトップ用ドロップダウン
+    // Dropdown menu logic
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
@@ -118,7 +164,6 @@ function setupEventListeners() {
         });
     });
 
-    // 他の場所をクリックしたらドロップダウンを閉じる
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
@@ -127,7 +172,7 @@ function setupEventListeners() {
         }
     });
 
-    // モバイルメニューの制御
+    // Mobile menu logic
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
@@ -137,12 +182,10 @@ function setupEventListeners() {
         });
     }
 
-    // モバイルメニュー内のアコーディオン
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                // 他の開いているdetailsを閉じる
                 detailsElements.forEach(otherDetails => {
                     if (otherDetails !== this && otherDetails.open) {
                         otherDetails.removeAttribute('open');
@@ -151,11 +194,130 @@ function setupEventListeners() {
             }
         });
     });
+
+    // Sort buttons logic
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    sortButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentSort.key = button.dataset.key;
+            currentSort.order = button.dataset.order;
+            sortAndRenderTable();
+            updateSortButtons();
+        });
+    });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function updateSortButtons() {
+    const sortButtons = document.querySelectorAll('.sort-btn');
+    sortButtons.forEach(button => {
+        if (button.dataset.key === currentSort.key && button.dataset.order === currentSort.order) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
+}
+
+function renderTable() {
+    const tableBody = document.getElementById('table-body');
+    const placeholder = document.getElementById('table-placeholder');
+    tableBody.innerHTML = '';
+
+    if (tableData.length === 0) {
+        placeholder.textContent = '表示するデータがありません。';
+        placeholder.style.display = 'block';
+        return;
+    }
+    placeholder.style.display = 'none';
+
+    tableData.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'bg-white border-b hover:bg-slate-50';
+
+        let rateColor = 'text-slate-800'; // Default black
+        if (item.rate !== null) {
+            if (item.rate === minRateValue) {
+                rateColor = 'text-green-600';
+            } else if (item.rate === maxRateValue) {
+                rateColor = 'text-red-600';
+            }
+        }
+
+        row.innerHTML = `
+            <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${item.model}</td>
+            <td class="px-6 py-4 text-center">${item.us_price ? '$' + item.us_price.toLocaleString() : 'N/A'}</td>
+            <td class="px-6 py-4 text-center">${item.jp_price ? '¥' + item.jp_price.toLocaleString() : 'N/A'}</td>
+            <td class="px-6 py-4 text-center font-semibold ${rateColor}">
+                ${item.rate ? item.rate.toFixed(2) + ' 円' : 'N/A'}
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function sortAndRenderTable() {
+    const { key, order } = currentSort;
+    
+    tableData.sort((a, b) => {
+        if (a[key] === null) return 1;
+        if (b[key] === null) return -1;
+        
+        if (order === 'asc') {
+            return a[key] - b[key];
+        } else {
+            return b[key] - a[key];
+        }
+    });
+    
+    renderTable();
+}
+
+
+async function initializeApp() {
     setupEventListeners();
-});
+    const placeholder = document.getElementById('table-placeholder');
+    try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const csvText = await response.text();
+        
+        const rows = csvText.trim().split(/\r?\n/).slice(1); // Skip header row
+        
+        tableData = rows.map((row, index) => {
+            const columns = row.split(',');
+            const modelName = columns[0] ? columns[0].trim() : '';
+            const capacity = columns[1] ? columns[1].trim() : '';
+            const usPrice = parseFloat(columns[2]);
+            const jpPrice = parseFloat(columns[3]);
+            const rateFromSheet = parseFloat(columns[4]);
+            
+            return {
+                id: index,
+                model: `${modelName} ${capacity}`,
+                us_price: isNaN(usPrice) ? null : usPrice,
+                jp_price: isNaN(jpPrice) ? null : jpPrice,
+                rate: isNaN(rateFromSheet) ? null : rateFromSheet
+            };
+        });
+        
+        const validRates = tableData.map(item => item.rate).filter(rate => rate !== null);
+        if (validRates.length > 0) {
+            minRateValue = Math.min(...validRates);
+            maxRateValue = Math.max(...validRates);
+        }
+
+        sortAndRenderTable();
+        updateSortButtons();
+
+    } catch (error) {
+        console.error('Error fetching or parsing data:', error);
+        placeholder.textContent = 'データの読み込みに失敗しました。';
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
 </body>
 </html>
+
