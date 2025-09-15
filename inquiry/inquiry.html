@@ -61,7 +61,7 @@
                     <a href="../past-data/market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                 </div>
             </div>
-            <a href="inquiry.html" class="text-blue-600 font-bold">お問い合わせ</a>
+            <a href="inquiry.html" class="text-slate-600 hover:text-blue-600 font-semibold">お問い合わせ</a>
         </nav>
         <!-- ハンバーガーメニューボタン -->
         <button id="mobile-menu-button" class="block md:hidden text-slate-600">
@@ -94,7 +94,7 @@
                <a href="../past-data/market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
             </div>
         </details>
-        <a href="inquiry.html" class="block px-6 py-3 text-blue-600 bg-blue-50 font-semibold">お問い合わせ</a>
+        <a href="inquiry.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">お問い合わせ</a>
     </div>
 </header>
 
@@ -110,9 +110,13 @@
                         <!-- 
                             ↓↓↓ ここの your@email.com を あなたのメールアドレスに書き換えてください ↓↓↓ 
                         -->
-                        <form action="https://formsubmit.co/owarisyacho@gmail.com" method="POST">
-                             <!-- 送信後のリダイレクト先(サンクスページ)を指定します。このサンプルの場合、thanks.htmlが同じ階層にあることを想定しています。 -->
-                            <input type="hidden" name="_next" value="https://iphone-monitoring.github.io/2025/inquiry/thanks.html">
+                        <form action="https://formsubmit.co/your@email.com" method="POST">
+                             <!-- 
+                                送信後のリダイレクト先(サンクスページ)を指定します。
+                                ↓↓↓ 下の value="" の中に、あなたのサイトの「thanks.html」の完全なURL(https://...で始まるアドレス)を入れてください ↓↓↓ 
+                                例: https://username.github.io/my-site/inquiry/thanks.html
+                             -->
+                            <input type="hidden" name="_next" value="https://あなたのサイトのドメイン/inquiry/thanks.html">
                             <!-- スパム対策のreCAPTCHAを無効にする場合は、次の行のコメントを解除してください -->
                             <!-- <input type="hidden" name="_captcha" value="false"> -->
     
@@ -220,3 +224,5 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
+
