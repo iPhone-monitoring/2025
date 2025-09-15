@@ -245,20 +245,27 @@ function createChart(model, period){
       fill: false,
       pointRadius: 0,
       tension: 0.4,
-      spanGaps: true
+      spanGaps: true,
+      yAxisID: 'y' // Ensure this dataset is on the left axis
     });
 
     if(capData.list_price){
-      datasets.push({
-        label: cap+' 定価',
-        data: new Array(labels.length).fill(capData.list_price),
-        borderColor: color,
-        borderWidth: 1.5,
-        borderDash: [5,5],
-        fill: false,
-        pointRadius: 0,
-        tension: 0.1
-      });
+        const listPriceData = new Array(labels.length).fill(capData.list_price);
+        datasets.push({
+            label: cap+' 定価',
+            data: listPriceData,
+            borderColor: color,
+            borderWidth: 1.5,
+            borderDash: [5,5],
+            fill: {
+                target: 'origin',
+                above: 'rgba(0, 0, 0, 0)', // Transparent above the line
+                below: 'rgba(100, 116, 139, 0.05)' // Gray area below the line
+            },
+            pointRadius: 0,
+            tension: 0.1,
+            yAxisID: 'y' // Ensure this dataset is on the left axis
+        });
     }
     colorIndex++;
   });
@@ -283,6 +290,8 @@ function createChart(model, period){
   const scaleMin = Math.floor(minPrice / 10000) * 10000;
   const scaleMax = Math.ceil(maxPrice / 10000) * 10000;
 
+  const isPc = window.matchMedia('(min-width: 768px)').matches;
+
   chartInstance = new Chart(ctx,{
     type: 'line',
     data: {
@@ -306,7 +315,7 @@ function createChart(model, period){
             maxTicksLimit: 30
           }
         },
-        y: {
+        y: { // Left Y-axis
           min: scaleMin,
           max: scaleMax,
           title: { display: true, text: '価格 (円)' },
@@ -320,6 +329,24 @@ function createChart(model, period){
               }
               return 'transparent';
             },
+          },
+          ticks: { 
+              stepSize: 10000,
+              callback: function(value, index, ticks) {
+                if (Math.round(value) % 20000 === 0) {
+                    return '¥' + value.toLocaleString();
+                }
+                return '';
+              }
+          }
+        },
+        y1: { // Right Y-axis (PC only)
+          display: isPc,
+          position: 'right',
+          min: scaleMin,
+          max: scaleMax,
+          grid: {
+            drawOnChartArea: false, // Don't draw grid lines from this axis
           },
           ticks: { 
               stepSize: 10000,
