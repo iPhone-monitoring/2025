@@ -10,11 +10,6 @@
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/customParseFormat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/utc.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/timezone.js"></script>
-<script>
-  dayjs.extend(dayjs_plugin_customParseFormat);
-  dayjs.extend(dayjs_plugin_utc);
-  dayjs.extend(dayjs_plugin_timezone);
-</script>
 <style>
     body {
         font-family: 'Inter', 'Noto Sans JP', sans-serif;
@@ -135,22 +130,30 @@
 
 <main class="container mx-auto px-6 py-8 md:py-12">
     <h1 class="text-3xl font-bold text-slate-800 mb-6">相場グラフ</h1>
-
-    <!-- Selector Container -->
-    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
-        <div id="model-selector" class="space-y-3 border-b border-slate-200 pb-4">
-            <div id="iphone14-series" class="flex flex-wrap justify-center gap-2"></div>
-            <div id="iphone15-series" class="flex flex-wrap justify-center gap-2"></div>
-            <div id="iphone16-series" class="flex flex-wrap justify-center gap-2"></div>
-        </div>
-        <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4" style="display: none;">
-            <!-- Periods will be populated by JS -->
-        </div>
+    
+    <!-- ローディングスピナー -->
+    <div id="loader" class="flex justify-center items-center py-20">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <div id="graph-container" class="w-full">
-        <canvas id="priceChart" style="display:none;"></canvas>
-        <div id="graph-placeholder">機種を選択してください</div>
+    <!-- メインコンテンツ (最初は非表示) -->
+    <div id="main-content" class="hidden">
+        <!-- Selector Container -->
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+            <div id="model-selector" class="space-y-3 border-b border-slate-200 pb-4">
+                <div id="iphone14-series" class="flex flex-wrap justify-center gap-2"></div>
+                <div id="iphone15-series" class="flex flex-wrap justify-center gap-2"></div>
+                <div id="iphone16-series" class="flex flex-wrap justify-center gap-2"></div>
+            </div>
+            <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4" style="display: none;">
+                <!-- Periods will be populated by JS -->
+            </div>
+        </div>
+
+        <div id="graph-container" class="w-full">
+            <canvas id="priceChart" style="display:none;"></canvas>
+            <div id="graph-placeholder">機種を選択してください</div>
+        </div>
     </div>
 </main>
 
@@ -317,7 +320,7 @@ function selectModel(model, btn){
   periodSelector.style.display = 'flex';
   periodSelector.innerHTML='';
 
-  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月'];
+  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月','1年'];
   const periods = Array.from(modelInfo[model].periods);
   periods.sort((a,b)=> periodOrder.indexOf(a) - periodOrder.indexOf(b));
 
@@ -341,12 +344,18 @@ function selectModel(model, btn){
 }
 
 async function initializePage(){
+  const loader = document.getElementById('loader');
+  const mainContent = document.getElementById('main-content');
   const modelSelector = document.getElementById('model-selector');
+
   const showError = msg=>{
     modelSelector.innerHTML='';
     const placeholder=document.getElementById('graph-placeholder');
     placeholder.style.display='flex';
     placeholder.textContent=msg;
+    // エラー時もローダーを隠してコンテンツを表示
+    loader.style.display = 'none';
+    mainContent.classList.remove('hidden');
   };
 
   try{
@@ -362,24 +371,41 @@ async function initializePage(){
     const listPricesHeader = rows[2];
     const dataRows = rows.slice(3);
 
+    const listPriceMap = {};
+    // 最初にヘッダー行をすべてスキャンして、機種・容量ごとの定価マップを作成
+    for (let c = 1; c < modelsHeader.length; c++) {
+        const model = (modelsHeader[c] || '').trim();
+        const capacity = (capacitiesHeader[c] || '').trim();
+        if (model && capacity) {
+            const list_price = parsePrice(listPricesHeader[c]);
+            if (list_price !== null) {
+                const key = `${model}-${capacity}`;
+                listPriceMap[key] = list_price;
+            }
+        }
+    }
+
     const configBySeries = {
       'iPhone 14': {
         '1週間': { dateCol: 0, rows: 8, priceColStart: 1, priceColEnd: 12 },
         '1ヶ月': { dateCol: 0, rows: 31, priceColStart: 1, priceColEnd: 12 },
         '3ヶ月': { dateCol: 0, rows: 92, priceColStart: 1, priceColEnd: 12 },
-        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 }
+        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 },
+        '1年': { dateCol: 0, rows: 365, priceColStart: 1, priceColEnd: 12 }
       },
       'iPhone 15': {
         '1週間': { dateCol: 13, rows: 192, priceColStart: 14, priceColEnd: 26 },
         '1ヶ月': { dateCol: 13, rows: 744, priceColStart: 14, priceColEnd: 26 },
         '3ヶ月': { dateCol: 27, rows: 92, priceColStart: 28, priceColEnd: 40 },
-        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 }
+        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 },
+        '1年': { dateCol: 27, rows: 364, priceColStart: 28, priceColEnd: 40 }
       },
       'iPhone 16': {
         '1週間': { dateCol: 41, rows: 192, priceColStart: 42, priceColEnd: 54 },
         '1ヶ月': { dateCol: 41, rows: 744, priceColStart: 42, priceColEnd: 54 },
         '3ヶ月': { dateCol: 55, rows: 92, priceColStart: 56, priceColEnd: 68 },
-        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 }
+        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 },
+        '1年': { dateCol: 55, rows: 365, priceColStart: 56, priceColEnd: 68 }
       }
     };
 
@@ -391,11 +417,13 @@ async function initializePage(){
         const relevantRows = dataRows.slice(0, numRows);
 
         for (let c = priceColStart; c <= priceColEnd; c++) {
-          const model = modelsHeader[c]?.trim();
-          const capacity = capacitiesHeader[c]?.trim();
-          const list_price = parsePrice(listPricesHeader[c]);
-
+          const model = (modelsHeader[c] || '').trim();
+          const capacity = (capacitiesHeader[c] || '').trim();
+          
           if (!model || model === '機種' || !capacity) continue;
+
+          // マップから定価を確実に取得
+          const list_price = listPriceMap[`${model}-${capacity}`] || null;
 
           if (!allData[model]) {
             allData[model] = {};
@@ -446,7 +474,13 @@ async function initializePage(){
         });
     });
 
-    if(Object.keys(modelInfo).length === 0) showError('解析できるデータがありません');
+    if(Object.keys(modelInfo).length === 0) {
+        showError('解析できるデータがありません');
+    } else {
+        // 正常終了時にローダーを隠してコンテンツを表示
+        loader.style.display = 'none';
+        mainContent.classList.remove('hidden');
+    }
 
   }catch(e){
     console.error(e);
@@ -509,6 +543,16 @@ function setupEventListeners() {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Day.jsのプラグインがグローバルスコープに読み込まれるのを待ってから拡張する
+    if (window.dayjs_plugin_customParseFormat) {
+        dayjs.extend(window.dayjs_plugin_customParseFormat);
+    }
+    if (window.dayjs_plugin_utc) {
+        dayjs.extend(window.dayjs_plugin_utc);
+    }
+    if (window.dayjs_plugin_timezone) {
+        dayjs.extend(window.dayjs_plugin_timezone);
+    }
     initializePage();
     setupEventListeners();
 });
