@@ -111,7 +111,7 @@
     <div class="mb-10">
         <h2 class="text-2xl font-semibold text-slate-700 mb-4">
             実質価格ランキング
-            <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
+            <span id="ranking-subtitle" class="hidden block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
         </h2>
         <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px] relative">
             <!-- ローディングスピナー -->
@@ -163,6 +163,7 @@ function formatExchangeRate(rateStr) {
 }
 
 function renderContent(model, capacity) {
+    document.getElementById('ranking-subtitle')?.classList.remove('hidden');
     const rankingContainer = document.getElementById('ranking-container');
     const cardsContainer = document.getElementById('country-cards-container');
     const cardsSection = document.getElementById('cards-section');
@@ -314,6 +315,7 @@ function renderContent(model, capacity) {
 function selectModel(model, btnElement) {
     document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active-btn'));
     btnElement.classList.add('active-btn');
+    document.getElementById('ranking-subtitle')?.classList.add('hidden');
 
     document.getElementById('ranking-model-name').textContent = model;
     document.getElementById('ranking-capacity-name').textContent = '';
@@ -468,10 +470,6 @@ async function initializePage() {
 
         if (modelSelector.children.length === 0) {
             rankingContainer.innerHTML = '<p class="text-center p-8 text-slate-500">表示できるモデルデータがありません。</p>';
-        } else {
-             // Hide the initial message once data is ready
-            const initialMessage = rankingContainer.querySelector('p');
-            if(initialMessage) initialMessage.style.display = 'none';
         }
         
         loader.style.display = 'none';
