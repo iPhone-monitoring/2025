@@ -16,36 +16,150 @@
   dayjs.extend(dayjs_plugin_timezone);
 </script>
 <style>
-html, body { height: 100%; margin:0; }
-body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
-header, footer { flex-shrink:0; }
-main { flex-grow:1; display:flex; flex-direction:column; padding:1.5rem; }
-.model-btn, .period-btn { cursor:pointer; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; border:1px solid #cbd5e1; transition:0.2s; background:#fff; color:#374151; }
-.model-btn.active-btn, .period-btn.active-btn { background:#2563eb; color:#fff; border-color:#2563eb; }
-.model-btn:hover, .period-btn:hover { background:#e2e8f0; }
-#graph-container { flex-grow:1; position:relative; min-height:60vh; background:#fff; border-radius:0.5rem; box-shadow:0 2px 4px rgba(0,0,0,0.05); margin-top:1rem; }
-#priceChart { position:absolute; top:0; left:0; width:100%; height:100%; }
-#graph-placeholder { position:absolute; inset:0; display:flex; justify-content:center; align-items:center; color:#94a3b8; }
+    body {
+        font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+    main {
+        flex-grow: 1;
+    }
+    #graph-container {
+        flex-grow:1;
+        position:relative;
+        min-height:60vh;
+        background:#fff;
+        border-radius:0.5rem;
+        box-shadow:0 2px 4px rgba(0,0,0,0.05);
+        margin-top:1rem;
+    }
+    #priceChart {
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+    }
+    #graph-placeholder {
+        position:absolute;
+        inset:0;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        color:#94a3b8;
+    }
+    summary::-webkit-details-marker {
+        display: none;
+    }
+    summary {
+        list-style: none;
+    }
+    details[open] summary svg {
+        transform: rotate(180deg);
+    }
+    .active-btn {
+        background-color:#2563eb !important;
+        color:white !important;
+        border-color: #2563eb !important;
+        box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1);
+    }
 </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800">
 
-<header class="bg-white shadow-md p-4 text-xl font-bold text-blue-600">iPhone相場</header>
+<!-- ヘッダー -->
+<header class="bg-white shadow-md sticky top-0 z-10">
+    <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
+        <nav class="hidden md:flex items-center space-x-6">
+            <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
+            <!-- iPhone 17 ドロップダウン (クリック式) -->
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    iPhone 17
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="../iPhone17/overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
+                    <a href="../iPhone17/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="../iPhone17/market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
 
-<main>
-  <h2 class="text-center text-lg font-semibold text-slate-700 mb-2">1. 機種を選択</h2>
-  <div class="flex flex-wrap justify-center gap-2 mb-4" id="model-selector"></div>
-  
-  <h2 class="text-center text-lg font-semibold text-slate-700 my-2" id="period-title" style="display: none;">2. 期間を選択</h2>
-  <div class="flex flex-wrap justify-center gap-2 mb-4" id="period-selector"></div>
-  
-  <div id="graph-container">
-    <canvas id="priceChart" style="display:none;"></canvas>
-    <div id="graph-placeholder">機種を選択してください</div>
-  </div>
+            <!-- 過去データ ドロップダウン (クリック式) -->
+            <div class="relative js-dropdown">
+                <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
+                    過去データ
+                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
+                    <a href="market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
+                    <a href="market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
+                </div>
+            </div>
+        </nav>
+        <!-- ハンバーガーメニューボタン -->
+        <button id="mobile-menu-button" class="block md:hidden text-slate-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+        </button>
+    </div>
+    <!-- モバイルメニュー -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
+        <a href="../index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
+        <details class="w-full">
+            <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                <span>iPhone 17</span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <div class="bg-slate-50">
+                <a href="../iPhone17/overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
+                <a href="../iPhone17/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                <a href="../iPhone17/market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+            </div>
+        </details>
+         <details class="w-full">
+            <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
+                <span>過去データ</span>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </summary>
+            <div class="bg-slate-50">
+                <a href="market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
+                <a href="market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
+            </div>
+        </details>
+    </div>
+</header>
+
+<main class="container mx-auto px-6 py-8 md:py-12">
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">相場グラフ</h1>
+
+    <!-- Selector Container -->
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+        <div id="model-selector" class="space-y-3 border-b border-slate-200 pb-4">
+            <div id="iphone14-series" class="flex flex-wrap justify-center gap-2"></div>
+            <div id="iphone15-series" class="flex flex-wrap justify-center gap-2"></div>
+            <div id="iphone16-series" class="flex flex-wrap justify-center gap-2"></div>
+        </div>
+        <div id="period-selector" class="flex flex-wrap justify-center gap-2 pt-4" style="display: none;">
+            <!-- Periods will be populated by JS -->
+        </div>
+    </div>
+
+    <div id="graph-container" class="w-full">
+        <canvas id="priceChart" style="display:none;"></canvas>
+        <div id="graph-placeholder">機種を選択してください</div>
+    </div>
 </main>
 
-<footer class="bg-slate-800 text-white text-center p-4">&copy; 2025 iPhone相場</footer>
+<!-- フッター -->
+<footer class="bg-slate-800 text-white mt-auto">
+    <div class="container mx-auto px-6 py-8 text-center">
+        <p>&copy; 2025 iPhone相場. All rights reserved.</p>
+    </div>
+</footer>
 
 <script>
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=8162687&single=true&output=csv';
@@ -61,15 +175,32 @@ function parsePrice(str){
   return isNaN(n)? null:n;
 }
 
+function formatLabel(dateStr, dateCol) {
+    const specialCols = [0, 27, 55]; // A, AB, BD
+    const dateParts = dateStr.split(' ');
+
+    if (specialCols.includes(dateCol)) {
+        // For A, AB, BD, if there's a time part like 0:00:00, hide it.
+        return dateParts[0];
+    } else {
+        // For other columns, if there is time data, put it on a new line.
+        if (dateParts.length > 1) {
+            return [dateParts[0], dateParts.slice(1).join(' ')];
+        } else {
+            return dateStr;
+        }
+    }
+}
+
 function createChart(model, period){
   const canvas = document.getElementById('priceChart');
   const placeholder = document.getElementById('graph-placeholder');
-  
+
   if(chartInstance){
     chartInstance.destroy();
     chartInstance = null;
   }
-  
+
   canvas.style.display = 'block';
   placeholder.style.display = 'none';
   const ctx = canvas.getContext('2d');
@@ -81,10 +212,7 @@ function createChart(model, period){
     canvas.style.display='none';
     return;
   }
-  
-  // ✅ FIX: Get labels directly from the first capacity's data.
-  // The parsing logic now ensures all capacities have the same dates in the same order.
-  // This respects the original order from the CSV file.
+
   const firstCapacityKey = Object.keys(chartData.capacities)[0];
   if (!firstCapacityKey) {
     placeholder.textContent='選択された期間のグラフデータがありません。';
@@ -92,7 +220,7 @@ function createChart(model, period){
     canvas.style.display='none';
     return;
   }
-  
+
   const labels = chartData.capacities[firstCapacityKey].data.map(point => point.date);
 
   const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
@@ -104,7 +232,6 @@ function createChart(model, period){
     const capData = chartData.capacities[cap];
     const color = colors[colorIndex % colors.length];
 
-    // ✅ FIX: Data is now pre-aligned. Just extract the prices.
     const alignedPriceData = capData.data.map(point => point.price);
 
     datasets.push({
@@ -114,7 +241,7 @@ function createChart(model, period){
       borderWidth: 2.5,
       fill: false,
       pointRadius: 0,
-      tension: 0.1,
+      tension: 0.4,
       spanGaps: true
     });
 
@@ -135,9 +262,9 @@ function createChart(model, period){
 
   chartInstance = new Chart(ctx,{
     type: 'line',
-    data: { 
+    data: {
         labels: labels,
-        datasets: datasets 
+        datasets: datasets
     },
     options: {
       responsive: true,
@@ -148,8 +275,8 @@ function createChart(model, period){
           title: { display: true, text: '日付' },
           ticks: {
             autoSkip: true,
-            maxRotation: 0,
-            minRotation: 0,
+            maxRotation: 45,
+            minRotation: 45,
             maxTicksLimit: 10
           }
         },
@@ -186,19 +313,18 @@ function selectModel(model, btn){
   document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
   btn.classList.add('active-btn');
 
-  document.getElementById('period-title').style.display = 'block';
-
   const periodSelector = document.getElementById('period-selector');
+  periodSelector.style.display = 'flex';
   periodSelector.innerHTML='';
 
-  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月'];
+  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月','1年'];
   const periods = Array.from(modelInfo[model].periods);
   periods.sort((a,b)=> periodOrder.indexOf(a) - periodOrder.indexOf(b));
 
   periods.forEach(p=>{
     const btn=document.createElement('button');
     btn.textContent=p;
-    btn.className='period-btn';
+    btn.className='px-4 py-2 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border';
     btn.addEventListener('click',()=>selectPeriod(model,p,btn));
     periodSelector.appendChild(btn);
   });
@@ -235,25 +361,28 @@ async function initializePage(){
     const capacitiesHeader = rows[1];
     const listPricesHeader = rows[2];
     const dataRows = rows.slice(3);
-    
+
     const configBySeries = {
       'iPhone 14': {
         '1週間': { dateCol: 0, rows: 8, priceColStart: 1, priceColEnd: 12 },
         '1ヶ月': { dateCol: 0, rows: 31, priceColStart: 1, priceColEnd: 12 },
         '3ヶ月': { dateCol: 0, rows: 92, priceColStart: 1, priceColEnd: 12 },
-        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 }
+        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 },
+        '1年': { dateCol: 0, rows: 365, priceColStart: 1, priceColEnd: 12 }
       },
       'iPhone 15': {
         '1週間': { dateCol: 13, rows: 192, priceColStart: 14, priceColEnd: 26 },
         '1ヶ月': { dateCol: 13, rows: 744, priceColStart: 14, priceColEnd: 26 },
         '3ヶ月': { dateCol: 27, rows: 92, priceColStart: 28, priceColEnd: 40 },
-        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 }
+        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 },
+        '1年': { dateCol: 27, rows: 364, priceColStart: 28, priceColEnd: 40 }
       },
       'iPhone 16': {
         '1週間': { dateCol: 41, rows: 192, priceColStart: 42, priceColEnd: 54 },
         '1ヶ月': { dateCol: 41, rows: 744, priceColStart: 42, priceColEnd: 54 },
         '3ヶ月': { dateCol: 55, rows: 92, priceColStart: 56, priceColEnd: 68 },
-        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 }
+        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 },
+        '1年': { dateCol: 55, rows: 365, priceColStart: 56, priceColEnd: 68 }
       }
     };
 
@@ -270,7 +399,7 @@ async function initializePage(){
           const list_price = parsePrice(listPricesHeader[c]);
 
           if (!model || model === '機種' || !capacity) continue;
-          
+
           if (!allData[model]) {
             allData[model] = {};
             modelInfo[model] = { periods: new Set() };
@@ -285,30 +414,39 @@ async function initializePage(){
             };
           }
           modelInfo[model].periods.add(periodName);
-          
+
           const currentSeriesData = allData[model][periodName].capacities[capacity].data;
-          
+
           relevantRows.forEach(row => {
             const dateStr = row[dateCol]?.trim();
-            // ✅ FIX: Push data point as long as a date exists, even if price is null.
-            // This ensures all data arrays for a given period have the same length and order.
             if (dateStr) {
                 const price = parsePrice(row[c]);
-                currentSeriesData.push({ date: dateStr, price: price });
+                const formattedDate = formatLabel(dateStr, dateCol);
+                currentSeriesData.push({ date: formattedDate, price: price });
             }
           });
         }
       }
     }
 
-    const modelsOrder = ['iPhone 14','iPhone 14 Plus','iPhone 14 Pro','iPhone 14 Pro MAX','iPhone 15','iPhone 15 Plus','iPhone 15 Pro','iPhone 15 Pro MAX','iPhone 16','iPhone 16 Plus','iPhone 16 Pro','iPhone 16 Pro MAX'];
-    modelsOrder.forEach(m=>{
-      if(!allData[m]) return;
-      const btn=document.createElement('button');
-      btn.textContent=m;
-      btn.className='model-btn';
-      btn.addEventListener('click',()=>selectModel(m,btn));
-      modelSelector.appendChild(btn);
+    const modelsBySeries = {
+        'iphone14-series': ['iPhone 14', 'iPhone 14 Plus', 'iPhone 14 Pro', 'iPhone 14 Pro MAX'],
+        'iphone15-series': ['iPhone 15', 'iPhone 15 Plus', 'iPhone 15 Pro', 'iPhone 15 Pro MAX'],
+        'iphone16-series': ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro MAX']
+    };
+
+    Object.keys(modelsBySeries).forEach(seriesId => {
+        const seriesContainer = document.getElementById(seriesId);
+        const models = modelsBySeries[seriesId];
+
+        models.forEach(m => {
+            if (!allData[m]) return;
+            const btn = document.createElement('button');
+            btn.textContent = m;
+            btn.className = 'w-[calc(50%-0.5rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
+            btn.addEventListener('click', () => selectModel(m, btn));
+            seriesContainer.appendChild(btn);
+        });
     });
 
     if(Object.keys(modelInfo).length === 0) showError('解析できるデータがありません');
@@ -319,9 +457,65 @@ async function initializePage(){
   }
 }
 
-document.addEventListener('DOMContentLoaded',initializePage);
+function setupEventListeners() {
+    // デスクトップ用ドロップダウン
+    const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const dropdownId = this.getAttribute('data-dropdown-toggle');
+            const dropdownMenu = document.getElementById(dropdownId);
+
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                if (menu.id !== dropdownId) {
+                    menu.classList.add('hidden');
+                }
+            });
+            dropdownMenu.classList.toggle('hidden');
+        });
+    });
+
+    // 他の場所をクリックしたらドロップダウンを閉じる
+    window.addEventListener('click', function(event) {
+        if (!event.target.closest('.js-dropdown')) {
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
+                menu.classList.add('hidden');
+            });
+        }
+    });
+
+    // モバイルメニューの制御
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton && mobileMenu) {
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+
+    // モバイルメニュー内のアコーディオン
+    const detailsElements = document.querySelectorAll('#mobile-menu details');
+    detailsElements.forEach(details => {
+        details.addEventListener('toggle', function() {
+            if (this.open) {
+                // 他の開いているdetailsを閉じる
+                detailsElements.forEach(otherDetails => {
+                    if (otherDetails !== this && otherDetails.open) {
+                        otherDetails.removeAttribute('open');
+                    }
+                });
+            }
+        });
+    });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializePage();
+    setupEventListeners();
+});
 </script>
 
 </body>
 </html>
-
