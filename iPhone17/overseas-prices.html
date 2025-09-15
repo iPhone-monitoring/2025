@@ -15,11 +15,11 @@
         main {
             flex-grow: 1;
         }
-        .active-btn { 
-            background-color:#2563eb !important; 
-            color:white !important; 
+        .active-btn {
+            background-color:#2563eb !important;
+            color:white !important;
             border-color: #2563eb !important;
-            box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1); 
+            box-shadow:0 4px 6px -1px rgb(0 0 0 / 0.1),0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
         #capacity-selector:not(.visible){ display:none; }
         summary::-webkit-details-marker {
@@ -101,53 +101,30 @@
 </header>
 
 <main class="container mx-auto px-6 py-8 md:py-12">
-<h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
+    <h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
 
-<div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-    <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
-    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
-</div>
-
-<div class="mb-10">
-    <h2 class="text-2xl font-semibold text-slate-700 mb-4">
-        実質価格ランキング
-        <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
-    </h2>
-    <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
-        <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
-    <!-- ローディングスピナー -->
-    <div id="loader" class="flex justify-center items-center py-20">
-        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+        <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
+        <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
     </div>
-</div>
 
-<div id="cards-section" class="mb-10 hidden">
-    <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
-    <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
-</div>
-    <!-- メインコンテンツ (最初は非表示) -->
-    <div id="main-content" class="hidden">
-        <h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
-
-        <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-            <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
-            <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
-        </div>
-
-        <div class="mb-10">
-            <h2 class="text-2xl font-semibold text-slate-700 mb-4">
-                実質価格ランキング
-                <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
-            </h2>
-            <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
-                <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
+    <div class="mb-10">
+        <h2 class="text-2xl font-semibold text-slate-700 mb-4">
+            実質価格ランキング
+            <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
+        </h2>
+        <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px] relative">
+            <!-- ローディングスピナー -->
+            <div id="loader" class="absolute inset-0 flex justify-center items-center bg-white bg-opacity-75">
+                <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
+            <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
         </div>
+    </div>
 
-        <div id="cards-section" class="mb-10 hidden">
-            <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
-            <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
-        </div>
+    <div id="cards-section" class="mb-10 hidden">
+        <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
+        <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
     </div>
 </main>
 
@@ -378,29 +355,27 @@ async function fetchWithRetry(url, retries = 3, delay = 1000) {
     }
 }
 
-async function initializePage(){
+async function initializePage() {
     const loader = document.getElementById('loader');
-    const mainContent = document.getElementById('main-content');
-    const modelSelector=document.getElementById('model-selector');
-    const showError=msg=>{ document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
-    
-    const showError=msg=>{ 
-        document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`;
-        loader.style.display = 'none';
-        mainContent.classList.remove('hidden');
+    const modelSelector = document.getElementById('model-selector');
+    const rankingContainer = document.getElementById('ranking-container');
+
+    const showError = (msg) => {
+        rankingContainer.innerHTML = `<p class="text-center p-8 text-red-500">${msg}</p>`;
+        if(loader) loader.style.display = 'none';
     };
 
-    try{
-        const response=await fetchWithRetry(CSV_URL);
-        const csvText=await response.text();
-        const rows=csvText.trim().split(/\r?\n/).map(r=>r.split(',')).filter(r=>r.length>1 && r.join('').trim()!=='');
+    try {
+        const response = await fetchWithRetry(CSV_URL);
+        const csvText = await response.text();
+        const rows = csvText.trim().split(/\r?\n/).map(r => r.split(',')).filter(r => r.length > 1 && r.join('').trim() !== '');
 
         if (rows.length < 4) throw new Error('CSVデータが不正です。');
 
         const header = rows[0];
         const capacityHeader = rows[1];
 
-        const columnMap = {}; 
+        const columnMap = {};
         let currentModel = null;
         // Correctly loop over price columns C to N (indices 2 to 13)
         for (let i = 2; i <= 13; i++) {
@@ -433,15 +408,15 @@ async function initializePage(){
             japanDataStore[`${model}_${capacity}`] = { taxIn, taxEx };
 
             if (taxEx !== null) {
-                allParsedData.push({ 
-                    country: '日本', model, capacity, 
-                    price: taxEx, 
-                    japanPrice: taxEx, 
+                allParsedData.push({
+                    country: '日本', model, capacity,
+                    price: taxEx,
+                    japanPrice: taxEx,
                     japanPriceTaxIn: taxIn,
-                    exchangeRate: null, 
-                    taxRate: japanTaxRate, 
+                    exchangeRate: null,
+                    taxRate: japanTaxRate,
                     localPrice: taxIn,
-                    flag: japanFlag, 
+                    flag: japanFlag,
                     currencySymbol: japanCurrencySymbol
                 });
             }
@@ -483,33 +458,36 @@ async function initializePage(){
             }
         });
 
-        Object.keys(modelCapacityMap).forEach(model=>{
-            const btn=document.createElement('button');
-            btn.textContent=model;
-            btn.className='model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
-            btn.addEventListener('click',() => selectModel(model, btn));
+        Object.keys(modelCapacityMap).forEach(model => {
+            const btn = document.createElement('button');
+            btn.textContent = model;
+            btn.className = 'model-selector-btn w-[calc(50%-0.25rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
+            btn.addEventListener('click', () => selectModel(model, btn));
             modelSelector.appendChild(btn);
         });
 
-        if(modelSelector.children.length === 0) showError('表示できるモデルデータがありません。');
-        if(modelSelector.children.length === 0) {
-            showError('表示できるモデルデータがありません。');
+        if (modelSelector.children.length === 0) {
+            rankingContainer.innerHTML = '<p class="text-center p-8 text-slate-500">表示できるモデルデータがありません。</p>';
         } else {
-            loader.style.display = 'none';
-            mainContent.classList.remove('hidden');
+             // Hide the initial message once data is ready
+            const initialMessage = rankingContainer.querySelector('p');
+            if(initialMessage) initialMessage.style.display = 'none';
         }
+        
+        loader.style.display = 'none';
 
-    }catch(e){
+    } catch (e) {
         console.error(e);
         let errorMessage = `データ取得または処理に失敗しました。<br>エラー: ${e.message}`;
-        if (e.message.includes('408')) {
-            errorMessage = `データの読み込みがタイムアウトしました (エラー: 408)。<br>ページを再読み込みするか、後でもう一度お試しください。`;
+        if (e.message.includes('408') || e.message.includes('server error')) {
+            errorMessage = `データの読み込みに失敗しました。<br>ページを再読み込みするか、後でもう一度お試しください。`;
         } else if (e.message.includes('Failed to fetch')) {
-             errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認してください。`;
+            errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認してください。`;
         }
         showError(errorMessage);
     }
 }
+
 
 function setupEventListeners() {
     // デスクトップ用ドロップダウン
