@@ -263,6 +263,26 @@ function createChart(model, period){
     colorIndex++;
   });
 
+  let minPrice = Infinity;
+  let maxPrice = -Infinity;
+
+  datasets.forEach(dataset => {
+      dataset.data.forEach(price => {
+          if (price !== null) {
+              if (price < minPrice) minPrice = price;
+              if (price > maxPrice) maxPrice = price;
+          }
+      });
+  });
+
+  if (minPrice === Infinity || maxPrice === -Infinity) {
+      minPrice = 80000;
+      maxPrice = 200000;
+  }
+
+  const scaleMin = Math.floor(minPrice / 10000) * 10000;
+  const scaleMax = Math.ceil(maxPrice / 10000) * 10000;
+
   chartInstance = new Chart(ctx,{
     type: 'line',
     data: {
@@ -276,16 +296,40 @@ function createChart(model, period){
         x: {
           type: 'category',
           title: { display: true, text: '日付' },
+          grid: {
+            color: 'rgba(0, 0, 0, 0.08)',
+          },
           ticks: {
             autoSkip: true,
             maxRotation: 45,
             minRotation: 45,
-            maxTicksLimit: 10
+            maxTicksLimit: 30
           }
         },
         y: {
+          min: scaleMin,
+          max: scaleMax,
           title: { display: true, text: '価格 (円)' },
-          ticks: { callback: v=>'¥'+v.toLocaleString() }
+          grid: {
+            color: function(context) {
+              if (context.tick.value % 20000 === 0) {
+                return 'rgba(0, 0, 0, 0.1)';
+              }
+              if (context.tick.value % 10000 === 0) {
+                return 'rgba(0, 0, 0, 0.05)';
+              }
+              return 'transparent';
+            },
+          },
+          ticks: { 
+              stepSize: 10000,
+              callback: function(value, index, ticks) {
+                if (Math.round(value) % 20000 === 0) {
+                    return '¥' + value.toLocaleString();
+                }
+                return '';
+              }
+          }
         }
       },
       plugins: {
@@ -560,3 +604,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
