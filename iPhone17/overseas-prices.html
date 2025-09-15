@@ -101,27 +101,35 @@
 </header>
     
 <main class="container mx-auto px-6 py-8 md:py-12">
-<h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
-
-<div class="bg-white p-4 rounded-lg shadow-sm mb-8">
-    <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
-    <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
-</div>
-
-<div class="mb-10">
-    <h2 class="text-2xl font-semibold text-slate-700 mb-4">
-        実質価格ランキング
-        <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
-    </h2>
-    <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
-        <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
+    <!-- ローディングスピナー -->
+    <div id="loader" class="flex justify-center items-center py-20">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
-</div>
 
-<div id="cards-section" class="mb-10 hidden">
-    <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
-    <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
-</div>
+    <!-- メインコンテンツ (最初は非表示) -->
+    <div id="main-content" class="hidden">
+        <h1 class="text-3xl font-bold text-slate-800 mb-6">海外価格比較</h1>
+
+        <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+            <div id="model-selector" class="mb-2 flex flex-wrap justify-center gap-2 border-b pb-2"></div>
+            <div id="capacity-selector" class="flex flex-wrap justify-center gap-2 pt-2"></div>
+        </div>
+
+        <div class="mb-10">
+            <h2 class="text-2xl font-semibold text-slate-700 mb-4">
+                実質価格ランキング
+                <span class="block text-lg text-slate-500 font-normal">(<span id="ranking-model-name"></span> <span id="ranking-capacity-name"></span>)</span>
+            </h2>
+            <div id="ranking-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md min-h-[100px]">
+                <p class="text-center p-8 text-slate-500">機種と容量を選択してください。</p>
+            </div>
+        </div>
+
+        <div id="cards-section" class="mb-10 hidden">
+            <h2 class="text-2xl font-semibold text-slate-700 mb-4">国別 詳細データ</h2>
+            <div id="country-cards-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[100px]"></div>
+        </div>
+    </div>
 </main>
 
     <!-- フッター -->
@@ -352,8 +360,15 @@ async function fetchWithRetry(url, retries = 3, delay = 1000) {
 }
 
 async function initializePage(){
+    const loader = document.getElementById('loader');
+    const mainContent = document.getElementById('main-content');
     const modelSelector=document.getElementById('model-selector');
-    const showError=msg=>{ document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`; };
+    
+    const showError=msg=>{ 
+        document.getElementById('ranking-container').innerHTML=`<p class="text-center p-8 text-red-500">${msg}</p>`;
+        loader.style.display = 'none';
+        mainContent.classList.remove('hidden');
+    };
 
     try{
         const response=await fetchWithRetry(CSV_URL);
@@ -456,7 +471,12 @@ async function initializePage(){
             modelSelector.appendChild(btn);
         });
 
-        if(modelSelector.children.length === 0) showError('表示できるモデルデータがありません。');
+        if(modelSelector.children.length === 0) {
+            showError('表示できるモデルデータがありません。');
+        } else {
+            loader.style.display = 'none';
+            mainContent.classList.remove('hidden');
+        }
 
     }catch(e){
         console.error(e);
@@ -532,4 +552,3 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
-
