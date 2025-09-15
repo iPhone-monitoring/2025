@@ -396,10 +396,7 @@ async function initializePage(){
     modelSelector.innerHTML='';
     const placeholder=document.getElementById('graph-placeholder');
     placeholder.style.display='flex';
-    placeholder.textContent=msg;
-    // エラー時もローダーを隠してコンテンツを表示
-    loader.style.display = 'none';
-    mainContent.classList.remove('hidden');
+    placeholder.innerHTML=msg; // innerHTML used to render <br> tags
   };
 
   try{
@@ -416,7 +413,6 @@ async function initializePage(){
     const dataRows = rows.slice(3);
 
     const listPriceMap = {};
-    // 最初にヘッダー行をすべてスキャンして、機種・容量ごとの定価マップを作成
     for (let c = 1; c < modelsHeader.length; c++) {
         const model = (modelsHeader[c] || '').trim();
         const capacity = (capacitiesHeader[c] || '').trim();
@@ -466,7 +462,6 @@ async function initializePage(){
           
           if (!model || model === '機種' || !capacity) continue;
 
-          // マップから定価を確実に取得
           const list_price = listPriceMap[`${model}-${capacity}`] || null;
 
           if (!allData[model]) {
@@ -520,15 +515,20 @@ async function initializePage(){
 
     if(Object.keys(modelInfo).length === 0) {
         showError('解析できるデータがありません');
-    } else {
-        // 正常終了時にローダーを隠してコンテンツを表示
-        loader.style.display = 'none';
-        mainContent.classList.remove('hidden');
     }
 
   }catch(e){
-    console.error(e);
-    showError('データ取得または処理に失敗しました: '+e.message);
+    console.error('初期化エラー:', e);
+    let errorMessage = `データ取得または処理に失敗しました。<br>エラー: ${e.message}`;
+    if (e.message.includes('Failed to fetch')) {
+        errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認し、ページを再読み込みしてください。`;
+    } else if (e instanceof TypeError) {
+        errorMessage = `データの形式が正しくないため、処理を続行できませんでした。<br>スプレッドシートの構成を確認してください。`;
+    }
+    showError(errorMessage);
+  } finally {
+    loader.style.display = 'none';
+    mainContent.classList.remove('hidden');
   }
 }
 
