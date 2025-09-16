@@ -67,7 +67,7 @@ details[open] summary svg {
 <body class="bg-slate-50 text-slate-800">
 
 <!-- ヘッダー -->
-<header class="bg-white shadow-md sticky top-0 z-10">
+<header class="bg-white shadow-md sticky top-0 z-40">
     <div class="container mx-auto px-6 py-4 flex justify-between items-center">
         <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
         <nav class="hidden md:flex items-center space-x-6">
@@ -146,7 +146,7 @@ details[open] summary svg {
     <div class="scroll-indicator">
         <div id="table-container" class="relative overflow-x-auto shadow-md rounded-lg" style="display: none;">
             <table class="w-full min-w-[1200px] text-sm text-left rtl:text-right text-slate-500">
-                <thead id="log-table-head" class="text-xs text-slate-700 bg-slate-100">
+                <thead id="log-table-head" class="text-xs text-slate-700">
                     <!-- Headers will be inserted here by JavaScript -->
                 </thead>
                 <tbody id="log-table-body">
@@ -223,6 +223,7 @@ function setupEventListeners() {
 function checkTableScroll() {
     const tableContainer = document.getElementById('table-container');
     const indicatorWrapper = tableContainer.parentElement;
+    if (!tableContainer || !indicatorWrapper) return;
 
     if (tableContainer.scrollWidth > tableContainer.clientWidth) {
         indicatorWrapper.classList.add('is-scrollable');
@@ -257,28 +258,26 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.text();
         })
         .then(csvText => {
-            // Split rows by newline characters, handling both Windows and Unix endings
             const rows = csvText.trim().split(/\r?\n/);
-            if (rows.length < 3) { // Need headers, capacities, and at least one data row
+            if (rows.length < 3) {
                 throw new Error("CSV data is insufficient.");
             }
             
-            rows.shift(); // Row 1 (Models) is not used, we hardcode them for colspan structure.
-            const subHeaders = rows.shift().split(','); // Row 2 is capacities/currencies.
+            rows.shift();
+            const subHeaders = rows.shift().split(',');
 
-            // --- Create two-row merged header ---
-            tableHead.innerHTML = ''; // Clear any existing content
-            const tr1 = document.createElement('tr'); // First header row
-            const tr2 = document.createElement('tr'); // Second header row
+            tableHead.innerHTML = '';
+            const tr1 = document.createElement('tr');
+            const tr2 = document.createElement('tr');
+            const firstRowHeight = '41px';
 
-            // Row 1: Top-level categories
-            // 1. "機種・容量" Header (spans two rows)
-            const dateTh = document.createElement('th');
-            dateTh.scope = 'col';
-            dateTh.rowSpan = 2;
-            dateTh.className = 'px-6 py-3 text-center align-middle font-semibold text-sm';
-            dateTh.textContent = '機種・容量';
-            tr1.appendChild(dateTh);
+            // 1. Top-left corner cell
+            const topLeftTh = document.createElement('th');
+            topLeftTh.scope = 'col';
+            topLeftTh.rowSpan = 2;
+            topLeftTh.className = 'px-6 py-3 text-center align-middle font-semibold text-sm sticky top-0 left-0 z-30 bg-slate-200';
+            topLeftTh.textContent = '機種・容量';
+            tr1.appendChild(topLeftTh);
 
             // 2. Model Name Headers
             const modelHeaders = [
@@ -291,34 +290,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const th = document.createElement('th');
                 th.scope = 'col';
                 th.colSpan = model.colspan;
-                th.className = 'px-6 py-3 text-center font-semibold text-sm';
+                th.className = 'px-6 py-3 text-center font-semibold text-sm sticky top-0 z-20 bg-slate-100';
                 th.textContent = model.name;
                 tr1.appendChild(th);
             });
 
-            // 3. Large "為替" Exchange Rate Header
+            // 3. "為替" Header
             const exchangeTh = document.createElement('th');
             exchangeTh.scope = 'col';
             exchangeTh.colSpan = 4;
-            exchangeTh.className = 'px-6 py-3 text-center font-bold text-lg align-middle';
+            exchangeTh.className = 'px-6 py-3 text-center font-bold text-lg align-middle sticky top-0 z-20 bg-slate-100';
             exchangeTh.textContent = '為替';
             tr1.appendChild(exchangeTh);
 
-            // Row 2: Sub-categories (Capacities and Currencies)
-            // 4. Storage Size Headers
-            for (let i = 1; i <= 12; i++) {
+            // 4. Storage Size & Currency Headers
+            for (let i = 1; i <= 16; i++) {
+                if(i > subHeaders.length -1) continue;
                 const th = document.createElement('th');
                 th.scope = 'col';
-                th.className = 'px-6 py-3 text-center font-normal text-sm';
-                th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
-                tr2.appendChild(th);
-            }
-
-            // 5. Currency Pair Headers
-            for (let i = 13; i < subHeaders.length && i <= 16; i++) {
-                const th = document.createElement('th');
-                th.scope = 'col';
-                th.className = 'px-6 py-3 text-center font-normal text-sm';
+                th.className = 'px-6 py-3 text-center font-normal text-sm sticky z-20 bg-slate-100';
+                th.style.top = firstRowHeight;
                 th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
                 tr2.appendChild(th);
             }
@@ -326,20 +317,22 @@ document.addEventListener('DOMContentLoaded', () => {
             tableHead.appendChild(tr1);
             tableHead.appendChild(tr2);
 
-
-            // --- Populate the table body with data rows ---
+            // Populate table body
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
                 const rowData = rowText.split(',');
                 const tr = document.createElement('tr');
-                tr.className = 'bg-white border-b hover:bg-slate-50';
+                tr.className = 'bg-white border-b';
 
                 rowData.forEach((cellData, index) => {
                     const td = document.createElement('td');
-                    td.className = 'px-6 py-4 text-center whitespace-nowrap';
-                    
                     let formattedData = cellData.trim();
-                    // Format columns B to M (index 1 to 12) with ¥ and commas
+                    let tdClasses = 'px-6 py-4 text-center whitespace-nowrap hover:bg-slate-50';
+
+                    if (index === 0) {
+                        tdClasses += ' sticky left-0 z-10 bg-white';
+                    }
+
                     if (index >= 1 && index <= 12) {
                         const num = parseInt(formattedData.replace(/,/g, ''), 10);
                         if (!isNaN(num)) {
@@ -347,21 +340,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     
+                    td.className = tdClasses;
                     td.textContent = formattedData;
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
             });
 
-            // Hide the loading indicator and show the populated table
             loadingEl.style.display = 'none';
             tableContainer.style.display = 'block';
-            checkTableScroll(); // Check for scrollbar after table is visible
+            checkTableScroll();
         })
         .catch(error => {
             console.error('Error fetching or parsing Google Sheet data:', error);
             if (loadingEl) {
-                // Display an error message to the user
                 loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから、ページを再読み込みしてください。</div>`;
             }
         });
