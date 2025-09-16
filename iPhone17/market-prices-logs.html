@@ -62,6 +62,9 @@ details[open] summary svg {
         display: none;
     }
 }
+#log-table-head tr:nth-child(2) th {
+  top: 2.5rem; /* 40px. 1行目の高さ分だけ下げる */
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -292,12 +295,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tableHead.appendChild(tr2);
 
-            // --- Dynamically set top position for second header row ---
-            const firstRowHeight = tr1.offsetHeight;
-            tr2.querySelectorAll('th').forEach(th => {
-                th.style.top = `${firstRowHeight}px`;
-            });
-
             // --- Populate Table Body ---
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
@@ -331,6 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             loadingEl.style.display = 'none';
             tableContainer.style.display = 'block';
+            
             checkTableScroll();
         })
         .catch(error => {
