@@ -32,11 +32,11 @@ details[open] summary svg {
         <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
         <nav class="hidden md:flex items-center space-x-6">
             <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
-            <!-- iPhone 17 ドロップダウン -->
+            <!-- iPhone 17 ドロップダウン (クリック式) -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     iPhone 17
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
@@ -44,11 +44,12 @@ details[open] summary svg {
                     <a href="market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                 </div>
             </div>
-            <!-- 過去データ ドロップダウン -->
+
+            <!-- 過去データ ドロップダウン (クリック式) -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     過去データ
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
@@ -57,7 +58,7 @@ details[open] summary svg {
             </div>
             <a href="../inquiry/inquiry.html" class="text-slate-600 hover:text-blue-600 font-semibold">お問い合わせ</a>
         </nav>
-        <!-- ハンバーガーメニュー -->
+        <!-- ハンバーガーメニューボタン -->
         <button id="mobile-menu-button" class="block md:hidden text-slate-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
@@ -70,7 +71,7 @@ details[open] summary svg {
         <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>iPhone 17</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                 <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
@@ -78,10 +79,10 @@ details[open] summary svg {
                 <a href="market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
             </div>
         </details>
-        <details class="w-full">
+         <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>過去データ</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
@@ -96,7 +97,7 @@ details[open] summary svg {
 <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
     <h1 class="text-3xl md:text-4xl font-bold text-slate-800 text-center mb-8">相場ログ</h1>
     
-    <!-- Loading -->
+    <!-- Loading Indicator -->
     <div id="loading" class="text-center py-12 text-slate-600">
         <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -105,11 +106,15 @@ details[open] summary svg {
         データを読み込んでいます...
     </div>
 
-    <!-- Table -->
+    <!-- Table Container -->
     <div id="table-container" class="relative overflow-x-auto shadow-md rounded-lg" style="display: none;">
         <table class="w-full text-sm text-left rtl:text-right text-slate-500">
-            <thead id="log-table-head" class="text-xs text-slate-700 bg-slate-100"></thead>
-            <tbody id="log-table-body"></tbody>
+            <thead id="log-table-head" class="text-xs text-slate-700 bg-slate-100">
+                <!-- Headers will be inserted here by JavaScript -->
+            </thead>
+            <tbody id="log-table-body">
+                <!-- Data rows will be inserted here by JavaScript -->
+            </tbody>
         </table>
     </div>
 </main>
@@ -122,20 +127,27 @@ details[open] summary svg {
 </footer>
 
 <script>
-// header/menu
+// Function to set up header and menu event listeners
 function setupEventListeners() {
+    // Desktop dropdowns
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
             event.stopPropagation();
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
+            
+            // Close other open dropdowns
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) menu.classList.add('hidden');
+                if (menu.id !== dropdownId) {
+                    menu.classList.add('hidden');
+                }
             });
             dropdownMenu.classList.toggle('hidden');
         });
     });
+
+    // Close dropdowns when clicking outside
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
@@ -143,6 +155,8 @@ function setupEventListeners() {
             });
         }
     });
+
+    // Mobile menu toggle
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
@@ -151,10 +165,13 @@ function setupEventListeners() {
             mobileMenu.classList.toggle('hidden');
         });
     }
+
+    // Accordion within mobile menu
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
+                // Close other open details elements
                 detailsElements.forEach(otherDetails => {
                     if (otherDetails !== this && otherDetails.open) {
                         otherDetails.removeAttribute('open');
@@ -165,39 +182,56 @@ function setupEventListeners() {
     });
 }
 
+// Main script execution on DOM content loaded
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize all the interactive header/menu elements
     setupEventListeners();
 
+    // Fetch and display Google Sheet data
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=157180578&single=true&output=csv';
     const tableBody = document.getElementById('log-table-body');
     const tableHead = document.getElementById('log-table-head');
     const loadingEl = document.getElementById('loading');
     const tableContainer = document.getElementById('table-container');
 
-    if (!tableBody || !tableHead || !loadingEl || !tableContainer) return;
+    // Ensure all required elements are on the page before proceeding
+    if (!tableBody || !tableHead || !loadingEl || !tableContainer) {
+        console.error('Required table elements not found in the DOM.');
+        return;
+    }
 
     fetch(sheetUrl)
         .then(response => {
-            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
+            }
             return response.text();
         })
         .then(csvText => {
+            // Split rows by newline characters, handling both Windows and Unix endings
             const rows = csvText.trim().split(/\r?\n/);
-            if (rows.length < 3) throw new Error("CSV data is insufficient.");
+            if (rows.length < 3) { // Need headers, capacities, and at least one data row
+                throw new Error("CSV data is insufficient.");
+            }
+            
+            rows.shift(); // Row 1 (Models) is not used, we hardcode them for colspan structure.
+            const subHeaders = rows.shift().split(','); // Row 2 is capacities/currencies.
 
-            rows.shift(); // 1行目を捨てる
-            const capacities = rows.shift().split(','); // 2行目を容量として使う
+            // --- Create two-row merged header ---
+            tableHead.innerHTML = ''; // Clear any existing content
+            const tr1 = document.createElement('tr'); // First header row
+            const tr2 = document.createElement('tr'); // Second header row
 
-            tableHead.innerHTML = '';
-            const tr1 = document.createElement('tr');
-            const tr2 = document.createElement('tr');
-
+            // Row 1: Top-level categories
+            // 1. "機種・容量" Header (spans two rows)
             const dateTh = document.createElement('th');
+            dateTh.scope = 'col';
             dateTh.rowSpan = 2;
-            dateTh.className = 'px-6 py-3 text-center align-middle font-semibold';
-            dateTh.textContent = "日時・定価";
+            dateTh.className = 'px-6 py-3 text-center align-middle font-semibold text-sm';
+            dateTh.textContent = '機種・容量';
             tr1.appendChild(dateTh);
 
+            // 2. Model Name Headers
             const modelHeaders = [
                 { name: 'iPhone 17', colspan: 2 },
                 { name: 'iPhone Air', colspan: 3 },
@@ -206,55 +240,79 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
             modelHeaders.forEach(model => {
                 const th = document.createElement('th');
+                th.scope = 'col';
                 th.colSpan = model.colspan;
-                th.className = 'px-6 py-3 text-center font-semibold';
+                th.className = 'px-6 py-3 text-center font-semibold text-sm';
                 th.textContent = model.name;
                 tr1.appendChild(th);
             });
 
+            // 3. Large "為替" Exchange Rate Header
             const exchangeTh = document.createElement('th');
+            exchangeTh.scope = 'col';
             exchangeTh.colSpan = 4;
             exchangeTh.className = 'px-6 py-3 text-center font-bold text-lg align-middle';
             exchangeTh.textContent = '為替';
             tr1.appendChild(exchangeTh);
 
+            // Row 2: Sub-categories (Capacities and Currencies)
+            // 4. Storage Size Headers
             for (let i = 1; i <= 12; i++) {
                 const th = document.createElement('th');
-                th.className = 'px-6 py-3 text-center font-normal';
-                th.textContent = capacities[i] ? capacities[i].trim() : '';
+                th.scope = 'col';
+                th.className = 'px-6 py-3 text-center font-normal text-sm';
+                th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
                 tr2.appendChild(th);
             }
-            for (let i = 13; i < capacities.length && i <= 16; i++) {
+
+            // 5. Currency Pair Headers
+            for (let i = 13; i < subHeaders.length && i <= 16; i++) {
                 const th = document.createElement('th');
-                th.className = 'px-6 py-3 text-center font-normal';
-                th.textContent = capacities[i] ? capacities[i].trim() : '';
+                th.scope = 'col';
+                th.className = 'px-6 py-3 text-center font-normal text-sm';
+                th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
                 tr2.appendChild(th);
             }
 
             tableHead.appendChild(tr1);
             tableHead.appendChild(tr2);
 
+
+            // --- Populate the table body with data rows ---
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
                 const rowData = rowText.split(',');
                 const tr = document.createElement('tr');
                 tr.className = 'bg-white border-b hover:bg-slate-50';
-                rowData.forEach(cellData => {
+
+                rowData.forEach((cellData, index) => {
                     const td = document.createElement('td');
                     td.className = 'px-6 py-4 text-center whitespace-nowrap';
-                    td.textContent = cellData.trim();
+                    
+                    let formattedData = cellData.trim();
+                    // Format columns B to M (index 1 to 12) with ¥ and commas
+                    if (index >= 1 && index <= 12) {
+                        const num = parseInt(formattedData.replace(/,/g, ''), 10);
+                        if (!isNaN(num)) {
+                            formattedData = '¥' + num.toLocaleString('ja-JP');
+                        }
+                    }
+                    
+                    td.textContent = formattedData;
                     tr.appendChild(td);
                 });
                 tableBody.appendChild(tr);
             });
 
+            // Hide the loading indicator and show the populated table
             loadingEl.style.display = 'none';
             tableContainer.style.display = 'block';
         })
         .catch(error => {
             console.error('Error fetching or parsing Google Sheet data:', error);
             if (loadingEl) {
-                loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから再読み込みしてください。</div>`;
+                // Display an error message to the user
+                loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから、ページを再読み込みしてください。</div>`;
             }
         });
 });
@@ -262,3 +320,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
