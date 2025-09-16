@@ -548,7 +548,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentData.series.filter(s => selectedModels.includes(s.modelName)).forEach((s) => {
             const colorIndex = allData.series.findIndex(series => series.modelName === s.modelName);
             const color = colors[colorIndex % colors.length];
-            const isOldModel = !s.modelName.includes('iPhone 17');
+            const isOldModel = !s.modelName.includes('iPhone 17') && !s.modelName.includes('iPhone Air');
 
             newDatasets.push({
                 label: s.modelName,
