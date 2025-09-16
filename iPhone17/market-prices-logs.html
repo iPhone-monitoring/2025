@@ -139,12 +139,12 @@ details[open] summary svg {
     
     <!-- Loading Indicator -->
     <div id="loader" class="flex justify-center items-center py-20">
-        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
 
     <!-- Table Container -->
     <div class="scroll-indicator">
-        <div id="table-container" class="relative overflow-x-auto shadow-md rounded-lg" style="display: none;">
+        <div id="table-container" class="relative overflow-auto shadow-md rounded-lg" style="max-height: 70vh; display: none;">
             <table class="w-full min-w-[1200px] text-sm text-left rtl:text-right text-slate-500">
                 <thead id="log-table-head" class="text-xs text-slate-700">
                     <!-- Headers will be inserted here by JavaScript -->
@@ -175,17 +175,13 @@ function setupEventListeners() {
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
             
-            // Close other open dropdowns
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) {
-                    menu.classList.add('hidden');
-                }
+                if (menu.id !== dropdownId) menu.classList.add('hidden');
             });
             dropdownMenu.classList.toggle('hidden');
         });
     });
 
-    // Close dropdowns when clicking outside
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
@@ -194,22 +190,16 @@ function setupEventListeners() {
         }
     });
 
-    // Mobile menu toggle
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            mobileMenu.classList.toggle('hidden');
-        });
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     }
 
-    // Accordion within mobile menu
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                // Close other open details elements
                 detailsElements.forEach(otherDetails => {
                     if (otherDetails !== this && otherDetails.open) {
                         otherDetails.removeAttribute('open');
@@ -232,36 +222,25 @@ function checkTableScroll() {
     }
 }
 
-// Main script execution on DOM content loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize all the interactive header/menu elements
     setupEventListeners();
 
-    // Fetch and display Google Sheet data
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=157180578&single=true&output=csv';
     const tableBody = document.getElementById('log-table-body');
     const tableHead = document.getElementById('log-table-head');
     const loadingEl = document.getElementById('loader');
     const tableContainer = document.getElementById('table-container');
 
-    // Ensure all required elements are on the page before proceeding
-    if (!tableBody || !tableHead || !loadingEl || !tableContainer) {
-        console.error('Required table elements not found in the DOM.');
-        return;
-    }
+    if (!tableBody || !tableHead || !loadingEl || !tableContainer) return;
 
     fetch(sheetUrl)
         .then(response => {
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
             return response.text();
         })
         .then(csvText => {
             const rows = csvText.trim().split(/\r?\n/);
-            if (rows.length < 3) {
-                throw new Error("CSV data is insufficient.");
-            }
+            if (rows.length < 3) throw new Error("CSV data is insufficient.");
             
             rows.shift();
             const subHeaders = rows.shift().split(',');
@@ -269,17 +248,15 @@ document.addEventListener('DOMContentLoaded', () => {
             tableHead.innerHTML = '';
             const tr1 = document.createElement('tr');
             const tr2 = document.createElement('tr');
-            const firstRowHeight = '41px';
 
-            // 1. Top-left corner cell
+            // --- First Header Row ---
             const topLeftTh = document.createElement('th');
             topLeftTh.scope = 'col';
             topLeftTh.rowSpan = 2;
-            topLeftTh.className = 'px-6 py-3 text-center align-middle font-semibold text-sm sticky top-0 left-0 z-30 bg-slate-200';
+            topLeftTh.className = 'sticky top-0 left-0 z-30 bg-slate-200 px-6 py-3 text-center align-middle font-semibold text-sm';
             topLeftTh.textContent = '機種・容量';
             tr1.appendChild(topLeftTh);
 
-            // 2. Model Name Headers
             const modelHeaders = [
                 { name: 'iPhone 17', colspan: 2 },
                 { name: 'iPhone Air', colspan: 3 },
@@ -290,34 +267,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 const th = document.createElement('th');
                 th.scope = 'col';
                 th.colSpan = model.colspan;
-                th.className = 'px-6 py-3 text-center font-semibold text-sm sticky top-0 z-20 bg-slate-100';
+                th.className = 'sticky top-0 z-20 bg-slate-100 px-6 py-3 text-center font-semibold text-sm';
                 th.textContent = model.name;
                 tr1.appendChild(th);
             });
 
-            // 3. "為替" Header
             const exchangeTh = document.createElement('th');
             exchangeTh.scope = 'col';
             exchangeTh.colSpan = 4;
-            exchangeTh.className = 'px-6 py-3 text-center font-bold text-lg align-middle sticky top-0 z-20 bg-slate-100';
+            exchangeTh.className = 'sticky top-0 z-20 bg-slate-100 px-6 py-3 text-center font-bold text-lg align-middle';
             exchangeTh.textContent = '為替';
             tr1.appendChild(exchangeTh);
-
-            // 4. Storage Size & Currency Headers
+            
+            tableHead.appendChild(tr1);
+            
+            // --- Second Header Row ---
             for (let i = 1; i <= 16; i++) {
                 if(i > subHeaders.length -1) continue;
                 const th = document.createElement('th');
                 th.scope = 'col';
-                th.className = 'px-6 py-3 text-center font-normal text-sm sticky z-20 bg-slate-100';
-                th.style.top = firstRowHeight;
+                th.className = 'sticky z-20 bg-slate-100 px-6 py-3 text-center font-normal text-sm';
                 th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
                 tr2.appendChild(th);
             }
-
-            tableHead.appendChild(tr1);
             tableHead.appendChild(tr2);
 
-            // Populate table body
+            // --- Dynamically set top position for second header row ---
+            const firstRowHeight = tr1.offsetHeight;
+            tr2.querySelectorAll('th').forEach(th => {
+                th.style.top = `${firstRowHeight}px`;
+            });
+
+            // --- Populate Table Body ---
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
                 const rowData = rowText.split(',');
@@ -325,14 +306,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 tr.className = 'bg-white border-b';
 
                 rowData.forEach((cellData, index) => {
-                    const td = document.createElement('td');
+                    const cell = document.createElement(index === 0 ? 'th' : 'td');
                     let formattedData = cellData.trim();
-                    let tdClasses = 'px-6 py-4 text-center whitespace-nowrap hover:bg-slate-50';
-
+                    let cellClasses = 'px-6 py-4 text-center whitespace-nowrap';
+                    
                     if (index === 0) {
-                        tdClasses += ' sticky left-0 z-10 bg-white';
+                        cell.scope = 'row';
+                        cellClasses += ' sticky left-0 z-10 bg-white font-medium text-slate-900';
                     }
-
+                    
                     if (index >= 1 && index <= 12) {
                         const num = parseInt(formattedData.replace(/,/g, ''), 10);
                         if (!isNaN(num)) {
@@ -340,9 +322,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                     
-                    td.className = tdClasses;
-                    td.textContent = formattedData;
-                    tr.appendChild(td);
+                    cell.className = cellClasses;
+                    cell.textContent = formattedData;
+                    tr.appendChild(cell);
                 });
                 tableBody.appendChild(tr);
             });
@@ -352,9 +334,9 @@ document.addEventListener('DOMContentLoaded', () => {
             checkTableScroll();
         })
         .catch(error => {
-            console.error('Error fetching or parsing Google Sheet data:', error);
+            console.error('Error fetching/parsing Google Sheet data:', error);
             if (loadingEl) {
-                loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから、ページを再読み込みしてください。</div>`;
+                loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから再読み込みしてください。</div>`;
             }
         });
     
