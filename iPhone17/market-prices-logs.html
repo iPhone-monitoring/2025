@@ -29,11 +29,11 @@ details[open] summary svg {
     content: '›';
     position: absolute;
     top: 50%;
-    right: 0.5rem; /* 8px */
+    right: 0.5rem;
     transform: translateY(-50%);
-    font-size: 2.5rem; /* 40px */
+    font-size: 2.5rem;
     font-weight: 200;
-    color: #94a3b8; /* slate-400 */
+    color: #94a3b8;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
@@ -56,14 +56,10 @@ details[open] summary svg {
   }
 }
 
-/* Hide the indicator on screens large enough that the table won't scroll */
 @media (min-width: 768px) {
     .scroll-indicator::after {
         display: none;
     }
-}
-#log-table-head tr:nth-child(2) th {
-  top: 2.5rem; /* 40px. 1行目の高さ分だけ下げる */
 }
 </style>
 </head>
@@ -75,11 +71,11 @@ details[open] summary svg {
         <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
         <nav class="hidden md:flex items-center space-x-6">
             <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
-            <!-- iPhone 17 ドロップダウン (クリック式) -->
+            <!-- iPhone 17 ドロップダウン -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     iPhone 17
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
@@ -87,12 +83,11 @@ details[open] summary svg {
                     <a href="market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                 </div>
             </div>
-
-            <!-- 過去データ ドロップダウン (クリック式) -->
+            <!-- 過去データ ドロップダウン -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     過去データ
-                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
@@ -101,7 +96,7 @@ details[open] summary svg {
             </div>
             <a href="../inquiry/inquiry.html" class="text-slate-600 hover:text-blue-600 font-semibold">お問い合わせ</a>
         </nav>
-        <!-- ハンバーガーメニューボタン -->
+        <!-- ハンバーガーメニュー -->
         <button id="mobile-menu-button" class="block md:hidden text-slate-600">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
@@ -114,7 +109,7 @@ details[open] summary svg {
         <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>iPhone 17</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                 <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
@@ -122,10 +117,10 @@ details[open] summary svg {
                 <a href="market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
             </div>
         </details>
-         <details class="w-full">
+        <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>過去データ</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
@@ -136,25 +131,19 @@ details[open] summary svg {
     </div>
 </header>
 
-<!-- メインコンテンツ -->
+<!-- メイン -->
 <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
     <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-8">iPhone 17シリーズ 相場ログ</h1>
     
-    <!-- Loading Indicator -->
     <div id="loader" class="flex justify-center items-center py-20">
         <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <!-- Table Container -->
     <div class="scroll-indicator">
         <div id="table-container" class="relative overflow-auto shadow-md rounded-lg" style="max-height: 70vh; display: none;">
             <table class="w-full min-w-[1200px] text-sm text-left rtl:text-right text-slate-500">
-                <thead id="log-table-head" class="text-xs text-slate-700">
-                    <!-- Headers will be inserted here by JavaScript -->
-                </thead>
-                <tbody id="log-table-body">
-                    <!-- Data rows will be inserted here by JavaScript -->
-                </tbody>
+                <thead id="log-table-head" class="text-xs text-slate-700"></thead>
+                <tbody id="log-table-body"></tbody>
             </table>
         </div>
     </div>
@@ -168,16 +157,14 @@ details[open] summary svg {
 </footer>
 
 <script>
-// Function to set up header and menu event listeners
+// イベントリスナー設定
 function setupEventListeners() {
-    // Desktop dropdowns
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
             event.stopPropagation();
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
-            
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
                 if (menu.id !== dropdownId) menu.classList.add('hidden');
             });
@@ -203,10 +190,8 @@ function setupEventListeners() {
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                detailsElements.forEach(otherDetails => {
-                    if (otherDetails !== this && otherDetails.open) {
-                        otherDetails.removeAttribute('open');
-                    }
+                detailsElements.forEach(other => {
+                    if (other !== this && other.open) other.removeAttribute('open');
                 });
             }
         });
@@ -252,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const tr1 = document.createElement('tr');
             const tr2 = document.createElement('tr');
 
-            // --- First Header Row ---
+            // 1行目ヘッダー
             const topLeftTh = document.createElement('th');
             topLeftTh.scope = 'col';
             topLeftTh.rowSpan = 2;
@@ -283,8 +268,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tr1.appendChild(exchangeTh);
             
             tableHead.appendChild(tr1);
-            
-            // --- Second Header Row ---
+
+            // 2行目ヘッダー
             for (let i = 1; i <= 16; i++) {
                 if(i > subHeaders.length -1) continue;
                 const th = document.createElement('th');
@@ -295,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             tableHead.appendChild(tr2);
 
-            // --- Populate Table Body ---
+            // 本文
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
                 const rowData = rowText.split(',');
@@ -329,6 +314,18 @@ document.addEventListener('DOMContentLoaded', () => {
             loadingEl.style.display = 'none';
             tableContainer.style.display = 'block';
             
+            // 2行目ヘッダーの top を調整
+            setTimeout(() => {
+                const firstRow = tableHead.querySelector('tr:first-child');
+                if (firstRow) {
+                    const firstRowHeight = firstRow.getBoundingClientRect().height;
+                    const secondRowThs = tableHead.querySelectorAll('tr:nth-child(2) th');
+                    secondRowThs.forEach(th => {
+                        th.style.top = `${firstRowHeight}px`;
+                    });
+                }
+            }, 0);
+            
             checkTableScroll();
         })
         .catch(error => {
@@ -341,7 +338,5 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', checkTableScroll);
 });
 </script>
-
 </body>
 </html>
-
