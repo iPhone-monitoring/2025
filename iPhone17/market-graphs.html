@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>準備中のページ - iPhone相場</title>
+<title>相場グラフ - iPhone相場</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
 <style>
 html, body { height: 100%; margin:0; }
 body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
@@ -19,12 +21,48 @@ summary {
 details[open] summary svg {
     transform: rotate(180deg);
 }
+#graph-container {
+    position: relative;
+    min-height: 60vh;
+}
+#graph-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #94a3b8;
+}
+/* Custom control styles */
+.control-btn.active-btn {
+    background-color:#2563eb;
+    color:white;
+    box-shadow:0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+}
+.custom-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+.checkbox-label {
+    transition: all 0.2s ease-in-out;
+}
+.custom-checkbox:checked + .checkbox-label {
+    background-color: #eff6ff; /* bg-blue-50 */
+    border-color: #3b82f6; /* border-blue-500 */
+    color: #1d4ed8; /* text-blue-700 */
+    font-weight: 600; /* font-semibold */
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
 <!-- ヘッダー -->
-<header class="bg-white shadow-md sticky top-0 z-10">
+<header class="bg-white shadow-md sticky top-0 z-40">
     <div class="container mx-auto px-6 py-4 flex justify-between items-center">
         <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
         <nav class="hidden md:flex items-center space-x-6">
@@ -54,7 +92,6 @@ details[open] summary svg {
                 </div>
             </div>
             <a href="../inquiry/inquiry.html" class="text-slate-600 hover:text-blue-600 font-semibold">お問い合わせ</a>
-
         </nav>
         <!-- ハンバーガーメニューボタン -->
         <button id="mobile-menu-button" class="block md:hidden text-slate-600">
@@ -65,7 +102,7 @@ details[open] summary svg {
     </div>
     <!-- モバイルメニュー -->
     <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
-        <a href="../2025/index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
+        <a href="../index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
         <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>iPhone 17</span>
@@ -88,27 +125,52 @@ details[open] summary svg {
             </div>
         </details>
         <a href="../inquiry/inquiry.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">お問い合わせ</a>
-
     </div>
 </header>
 
-<main class="container mx-auto px-6 py-8 md:py-12 flex flex-col items-center justify-center text-center">
-    <div class="bg-white p-8 rounded-lg shadow-md max-w-lg w-full">
-        <svg class="mx-auto h-16 w-16 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.472-2.472a3.375 3.375 0 00-4.773-4.773L6.75 11.25l2.472 2.472a3.375 3.375 0 004.773 4.773z" />
-        </svg>
+<!-- メインコンテンツ -->
+<main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-8">
+        <span class="block md:inline">iPhone 17シリーズ</span>
+        <span class="block md:inline">相場グラフ</span>
+    </h1>
 
-        <h1 class="text-3xl font-bold text-slate-800 mt-6 mb-4">現在準備中です</h1>
-        <p class="text-slate-600 mb-8">
-            このページは現在準備中です。公開まで今しばらくお待ちください。
-        </p>
-        <div class="flex flex-col sm:flex-row justify-center gap-4">
-            <button onclick="history.back()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-3 px-6 rounded-lg transition-colors">
-                前のページに戻る
-            </button>
-            <a href="../index.html" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
-                トップページへ
-            </a>
+    <!-- Loading Indicator -->
+    <div id="loader" class="flex justify-center items-center py-20">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+
+    <!-- Charts and Controls -->
+    <div id="content" class="hidden">
+        <!-- Controls -->
+        <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
+            <div class="grid grid-cols-1 gap-6">
+                <!-- Data Type Selection -->
+                <div>
+                    <h2 class="text-lg font-semibold text-slate-700 mb-3">表示データ</h2>
+                    <div id="data-type-selector" class="flex items-center bg-slate-100 rounded-lg p-1 max-w-xs">
+                        <button data-value="price" class="control-btn data-type-btn flex-1 py-1.5 px-3 text-sm font-semibold rounded-md transition-colors active-btn">本体価格</button>
+                        <button data-value="profit" class="control-btn data-type-btn flex-1 py-1.5 px-3 text-sm font-semibold rounded-md transition-colors text-slate-600">利益額</button>
+                    </div>
+                </div>
+                <!-- Model Selection -->
+                <div>
+                     <h2 class="text-lg font-semibold text-slate-700 mb-3">表示モデル</h2>
+                     <div id="model-controls" class="space-y-3">
+                        <!-- Checkboxes will be inserted here -->
+                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div id="graph-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-md relative">
+            <div id="profit-range-selector" class="absolute top-2 right-2 z-10 flex items-center bg-slate-100 rounded-lg p-1 hidden">
+                <button data-range="i17" id="i17-range-btn" class="control-btn profit-range-btn py-1 px-2 sm:py-1.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors active-btn whitespace-nowrap">日付まで</button>
+                <button data-range="full" class="control-btn profit-range-btn py-1 px-2 sm:py-1.5 sm:px-3 text-xs sm:text-sm font-semibold rounded-md transition-colors text-slate-600 whitespace-nowrap">全期間</button>
+            </div>
+            <canvas id="mainChart" style="display:none;"></canvas>
+            <div id="graph-placeholder">表示するモデルを選択してください</div>
         </div>
     </div>
 </main>
@@ -121,8 +183,8 @@ details[open] summary svg {
 </footer>
 
 <script>
+// Function to set up header and menu event listeners
 function setupEventListeners() {
-    // デスクトップ用ドロップダウン
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
@@ -131,15 +193,12 @@ function setupEventListeners() {
             const dropdownMenu = document.getElementById(dropdownId);
             
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) {
-                    menu.classList.add('hidden');
-                }
+                if (menu.id !== dropdownId) menu.classList.add('hidden');
             });
             dropdownMenu.classList.toggle('hidden');
         });
     });
 
-    // 他の場所をクリックしたらドロップダウンを閉じる
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
@@ -148,22 +207,17 @@ function setupEventListeners() {
         }
     });
 
-    // モバイルメニューの制御
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            mobileMenu.classList.toggle('hidden');
-        });
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     }
 
-    // モバイルメニュー内のアコーディオン
+    // Mobile menu accordion
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                // 他の開いているdetailsを閉じる
                 detailsElements.forEach(otherDetails => {
                     if (otherDetails !== this && otherDetails.open) {
                         otherDetails.removeAttribute('open');
@@ -176,8 +230,327 @@ function setupEventListeners() {
 
 document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
+
+    const DATA_URLS = {
+        price: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=157180578&single=true&output=csv',
+        profit: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=717487199&single=true&output=csv'
+    };
+    const loader = document.getElementById('loader');
+    const content = document.getElementById('content');
+    const modelControlsContainer = document.getElementById('model-controls');
+    const profitRangeSelector = document.getElementById('profit-range-selector');
+
+    let chart = null;
+    let chartData = {};
+    let allData = { series: [] }; 
+
+    const colors = ['#3b82f6', '#16a34a', '#ef4444', '#f97316', '#8b5cf6', '#d946ef', '#06b6d4', '#65a30d', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1', '#84cc16', '#fbbf24', '#f87171', '#c084fc', '#0ea5e9', '#e11d48', '#facc15', '#a855f7', '#64748b', '#f43f5e', '#d97706', '#059669' ];
+
+    async function fetchAndProcessData(dataType) {
+        if (chartData[dataType]) return chartData[dataType]; 
+        
+        const response = await fetch(DATA_URLS[dataType]);
+        if (!response.ok) throw new Error(`Network response was not ok`);
+        const csvText = await response.text();
+
+        const rows = csvText.trim().split(/\r?\n/);
+        if (rows.length < 4) throw new Error("CSV data is insufficient.");
+
+        const modelGroups = rows[0].split(',');
+        const capacities = rows[1].split(',');
+        const listPrices = rows[2].split(',');
+        const dataRows = rows.slice(3);
+        
+        const labels = dataRows.map(row => row.split(',')[0]);
+        const series = [];
+
+        for (let i = 1; i < modelGroups.length; i++) {
+            const modelName = `${modelGroups[i]} ${capacities[i]}`;
+            if (!modelGroups[i] || !capacities[i] || modelGroups[i].trim() === "") continue;
+            
+            series.push({
+                modelName: modelName.trim(),
+                listPrice: parseFloat(listPrices[i]) || null,
+                data: dataRows.map(row => parseFloat(row.split(',')[i]) || null)
+            });
+        }
+        
+        const processedData = { labels, series, rawDataRows: dataRows };
+        chartData[dataType] = processedData; 
+        return processedData;
+    }
+    
+    function getModelSubtype(modelName) {
+        if (modelName.includes('Pro MAX')) return 'Pro MAX';
+        if (modelName.includes('Pro')) return 'Pro';
+        if (modelName.includes('Air')) return 'Air';
+        if (modelName.includes('Plus')) return 'Plus';
+        return '無印';
+    }
+
+    function populateControls(series) {
+        modelControlsContainer.innerHTML = ''; 
+        const seriesGroups = {};
+        const subtypeOrder = ['無印', 'Plus', 'Air', 'Pro', 'Pro MAX'];
+
+        series.forEach(s => {
+            const seriesNameMatch = s.modelName.match(/iPhone \d+|iPhone Air/);
+            if (!seriesNameMatch) return;
+            const seriesName = seriesNameMatch[0].includes('Air') ? 'iPhone 17' : seriesNameMatch[0];
+            if (!seriesGroups[seriesName]) {
+                seriesGroups[seriesName] = [];
+            }
+            seriesGroups[seriesName].push(s);
+        });
+
+        Object.keys(seriesGroups).sort().forEach(seriesName => {
+            const details = document.createElement('details');
+            details.open = seriesName === 'iPhone 17';
+            const summary = document.createElement('summary');
+            summary.className = 'font-semibold text-slate-600 cursor-pointer flex items-center';
+            summary.innerHTML = `${seriesName} シリーズ <svg class="w-4 h-4 ml-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>`;
+            
+            const checkboxGrid = document.createElement('div');
+            checkboxGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm pt-2 pl-4 border-l-2 ml-1';
+
+            const sortedModels = seriesGroups[seriesName].sort((a, b) => {
+                 const typeA = getModelSubtype(a.modelName);
+                 const typeB = getModelSubtype(b.modelName);
+                 
+                 const getCapacityInGB = (modelName) => {
+                    const capacityMatch = modelName.match(/(\d+)(GB|TB)/);
+                    if (!capacityMatch) return 0;
+                    let value = parseInt(capacityMatch[1]);
+                    const unit = capacityMatch[2];
+                    if (unit === 'TB') {
+                        value *= 1024; // Convert TB to GB for sorting
+                    }
+                    return value;
+                 };
+
+                 const capacityA = getCapacityInGB(a.modelName);
+                 const capacityB = getCapacityInGB(b.modelName);
+
+                 if (subtypeOrder.indexOf(typeA) !== subtypeOrder.indexOf(typeB)) {
+                     return subtypeOrder.indexOf(typeA) - subtypeOrder.indexOf(typeB);
+                 }
+                 return capacityA - capacityB;
+            });
+
+            sortedModels.forEach(s => {
+                const id = `model-toggle-${s.modelName.replace(/\s+/g, '-')}`;
+                const isChecked = s.modelName === 'iPhone 17 Pro 256GB' || s.modelName === 'iPhone 17 Pro MAX 256GB';
+                
+                let label = s.modelName.replace(/iPhone \d+\s?|iPhone\s?/, '').trim();
+                if (getModelSubtype(s.modelName) === '無印') {
+                   label = `無印 ${label}`;
+                }
+
+                checkboxGrid.innerHTML += `
+                    <div class="relative">
+                        <input type="checkbox" id="${id}" data-model="${s.modelName}" ${isChecked ? 'checked' : ''} class="custom-checkbox">
+                        <label for="${id}" class="checkbox-label flex items-center justify-center cursor-pointer p-2 border border-slate-200 bg-slate-50 rounded-md hover:bg-slate-100">
+                           <span class="text-xs text-center w-full">${label}</span>
+                        </label>
+                    </div>`;
+            });
+
+            details.appendChild(summary);
+            details.appendChild(checkboxGrid);
+            modelControlsContainer.appendChild(details);
+        });
+
+        document.querySelectorAll('#model-controls input').forEach(el => {
+            el.addEventListener('change', updateChart);
+        });
+    }
+
+    function initializeChart() {
+        if (chart) chart.destroy();
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        const placeholder = document.getElementById('graph-placeholder');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: {
+                        top: 30 
+                    }
+                },
+                plugins: {
+                    title: { display: true, text: '価格推移 (円)', font: { size: 16 } },
+                    legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 12 } } },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                           label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? '¥' + ctx.parsed.y.toLocaleString() : 'N/A'}`
+                        }
+                    }
+                },
+                scales: { 
+                    y: { 
+                        beginAtZero: false,
+                        ticks: {
+                            callback: (value) => '¥' + value.toLocaleString()
+                        }
+                    } 
+                },
+                onResize: () => placeholder.style.display = 'none'
+            }
+        });
+    }
+    
+    async function updateChart() {
+        if (!chart) return;
+        
+        const placeholder = document.getElementById('graph-placeholder');
+        const canvas = document.getElementById('mainChart');
+        const selectedType = document.querySelector('.data-type-btn.active-btn').dataset.value;
+        const profitRange = document.querySelector('.profit-range-btn.active-btn')?.dataset.range || 'i17';
+        const currentData = await fetchAndProcessData(selectedType);
+        const selectedModels = Array.from(document.querySelectorAll('#model-controls input:checked')).map(el => el.dataset.model);
+
+        if (selectedModels.length === 0) {
+            placeholder.style.display = 'flex';
+            canvas.style.display = 'none';
+            chart.data.datasets = []; chart.data.labels = []; chart.update();
+            return;
+        }
+        
+        placeholder.style.display = 'none';
+        canvas.style.display = 'block';
+        
+        let displayLabels = currentData.labels;
+        let dataSliceEnd = undefined;
+
+        if (selectedType === 'profit' && profitRange === 'i17') {
+            const profitDataRows = currentData.rawDataRows;
+            let lastDataRowIndex = -1;
+
+            for (let i = profitDataRows.length - 1; i >= 0; i--) {
+                const row = profitDataRows[i].split(',');
+                let rowHasData = false;
+                // Columns AN (39) to AY (50) for profit data
+                for (let j = 39; j <= 50; j++) {
+                    if (j < row.length && row[j] && row[j].trim() !== '') {
+                        rowHasData = true;
+                        break;
+                    }
+                }
+                if (rowHasData) {
+                    lastDataRowIndex = i;
+                    break;
+                }
+            }
+            if (lastDataRowIndex !== -1) {
+                dataSliceEnd = lastDataRowIndex + 1;
+                displayLabels = currentData.labels.slice(0, dataSliceEnd);
+            }
+        }
+        chart.data.labels = displayLabels;
+
+        const newDatasets = [];
+        
+        currentData.series.filter(s => selectedModels.includes(s.modelName)).forEach((s) => {
+            const colorIndex = allData.series.findIndex(series => series.modelName === s.modelName);
+            const color = colors[colorIndex % colors.length];
+
+            newDatasets.push({
+                label: s.modelName,
+                data: s.data.slice(0, dataSliceEnd),
+                borderColor: color,
+                tension: 0.2,
+                borderWidth: 2.5,
+                pointRadius: 0,
+                backgroundColor: 'transparent'
+            });
+            
+            if (s.listPrice && selectedType === 'price') {
+                 newDatasets.push({
+                    label: `${s.modelName} (定価)`,
+                    data: Array(displayLabels.length).fill(s.listPrice),
+                    borderColor: color,
+                    borderDash: [5, 5],
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                 });
+            }
+        });
+
+        if (selectedType === 'profit') {
+            newDatasets.push({
+                label: '利益0円',
+                data: Array(displayLabels.length).fill(0),
+                borderColor: '#94a3b8',
+                borderDash: [3, 3],
+                borderWidth: 1,
+                pointRadius: 0,
+            });
+        }
+
+        chart.data.datasets = newDatasets;
+        chart.options.plugins.title.text = selectedType === 'price' ? '本体価格の推移 (円)' : '利益額の推移 (円)';
+        chart.options.plugins.legend.labels.filter = (item) => !item.text.includes('(定価)') && item.text !== '利益0円';
+        chart.update();
+    }
+    
+    async function primeAllData() {
+        const priceData = await fetchAndProcessData('price');
+        const profitData = await fetchAndProcessData('profit');
+        const allModels = [...priceData.series, ...profitData.series];
+        allData.series = allModels.filter((v,i,a)=>a.findIndex(t=>(t.modelName === v.modelName))===i);
+    }
+
+    async function handleDataTypeChange(selectedType) {
+        loader.style.display = 'flex';
+        content.style.display = 'none';
+        profitRangeSelector.style.display = selectedType === 'profit' ? 'flex' : 'none';
+        
+        const data = await fetchAndProcessData(selectedType);
+        
+        populateControls(data.series);
+        await updateChart(); 
+
+        loader.style.display = 'none';
+        content.style.display = 'block';
+    }
+
+    document.querySelectorAll('.data-type-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+             document.querySelectorAll('.data-type-btn').forEach(b => b.classList.remove('active-btn'));
+             btn.classList.add('active-btn');
+             handleDataTypeChange(btn.dataset.value);
+        });
+    });
+
+     document.querySelectorAll('.profit-range-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+             document.querySelectorAll('.profit-range-btn').forEach(b => b.classList.remove('active-btn'));
+             btn.classList.add('active-btn');
+             updateChart();
+        });
+    });
+
+    async function initializeApp() {
+        const i17RangeBtn = document.getElementById('i17-range-btn');
+        if (i17RangeBtn) {
+            i17RangeBtn.textContent = `${dayjs().format('MM/DD')}まで`;
+        }
+
+        await primeAllData();
+        initializeChart();
+        const initialType = document.querySelector('.data-type-btn.active-btn').dataset.value;
+        await handleDataTypeChange(initialType);
+    }
+    
+    initializeApp();
 });
 </script>
 
 </body>
 </html>
+
