@@ -172,11 +172,11 @@ details[open] summary svg {
                 <!-- Model Selection -->
                 <div>
                      <div class="flex justify-between items-center mb-3">
-                         <h2 class="text-lg font-semibold text-slate-700">表示モデル</h2>
-                         <div id="global-controls-container" class="flex items-center gap-2" style="display: none;">
-                             <button data-scope="global" data-action="select" class="control-action-btn text-xs font-semibold text-blue-600 hover:underline">全シリーズ選択</button>
-                             <button data-scope="global" data-action="deselect" class="control-action-btn text-xs font-semibold text-slate-500 hover:underline">全シリーズ解除</button>
-                         </div>
+                          <h2 class="text-lg font-semibold text-slate-700">表示モデル</h2>
+                          <div id="global-controls-container" class="flex items-center gap-2" style="display: none;">
+                               <button data-scope="global" data-action="select" class="control-action-btn text-xs font-semibold text-blue-600 hover:underline">全シリーズ選択</button>
+                               <button data-scope="global" data-action="deselect" class="control-action-btn text-xs font-semibold text-slate-500 hover:underline">全シリーズ解除</button>
+                          </div>
                      </div>
                      <div id="model-controls" class="space-y-3">
                          <!-- Checkboxes will be inserted here -->
@@ -446,8 +446,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         ticks: {
                             autoSkip: true,
                             maxRotation: 45,
-                            minRotation: 0,
-                            maxTicksLimit: 30
+                            minRotation: 45,
+                            maxTicksLimit: 30,
+                            callback: function(value, index, ticks) {
+                                const label = this.getLabelForValue(value);
+                                const isPc = window.matchMedia('(min-width: 768px)').matches;
+                                if (isPc) {
+                                    const parts = String(label).split(' ');
+                                    if (parts.length > 1) {
+                                        return parts;
+                                    }
+                                }
+                                return label;
+                            }
                         }
                     },
                     y: { 
@@ -800,4 +811,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
