@@ -161,14 +161,14 @@ details[open] summary svg {
                 <!-- Model Selection -->
                 <div>
                      <div class="flex justify-between items-center mb-3">
-                        <h2 class="text-lg font-semibold text-slate-700">表示モデル</h2>
-                        <div id="global-controls-container" class="flex items-center gap-2" style="display: none;">
-                            <button id="select-all-series" class="text-xs font-semibold text-blue-600 hover:underline">全シリーズ選択</button>
-                            <button id="deselect-all-series" class="text-xs font-semibold text-blue-600 hover:underline">全シリーズ解除</button>
-                        </div>
+                         <h2 class="text-lg font-semibold text-slate-700">表示モデル</h2>
+                         <div id="global-controls-container" class="flex items-center gap-2" style="display: none;">
+                             <button data-scope="global" data-action="select" class="control-action-btn text-xs font-semibold text-blue-600 hover:underline">全シリーズ選択</button>
+                             <button data-scope="global" data-action="deselect" class="control-action-btn text-xs font-semibold text-slate-500 hover:underline">全シリーズ解除</button>
+                         </div>
                      </div>
                      <div id="model-controls" class="space-y-3">
-                        <!-- Checkboxes will be inserted here -->
+                         <!-- Checkboxes will be inserted here -->
                      </div>
                 </div>
             </div>
@@ -324,14 +324,28 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(seriesGroups).sort().forEach(seriesName => {
             const details = document.createElement('details');
             details.open = seriesName === 'iPhone 17';
+            details.dataset.seriesName = seriesName;
             
+            const modelsInGroup = seriesGroups[seriesName];
+            const subtypesInGroup = [...new Set(modelsInGroup.map(s => getModelSubtype(s.modelName)))];
+            
+            let subtypeButtonsHTML = '';
+            subtypeOrder.forEach(subtype => {
+                if (subtypesInGroup.includes(subtype)) {
+                    if (subtype === 'Plus' && !['iPhone 14', 'iPhone 15', 'iPhone 16'].includes(seriesName)) return;
+                    if (subtype === 'Air' && seriesName !== 'iPhone 17') return;
+                    subtypeButtonsHTML += `<button class="toggle-select-btn text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap" data-scope="subtype" data-subtype="${subtype}">${subtype}全選択</button>`;
+                }
+            });
+
             const summary = document.createElement('summary');
-            summary.className = 'font-semibold text-slate-600 cursor-pointer flex items-center justify-between';
+            summary.className = 'font-semibold text-slate-600 cursor-pointer flex items-center justify-between gap-4 py-1';
             summary.innerHTML = `
-                <span>${seriesName} シリーズ <svg class="w-4 h-4 ml-1 transition-transform inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
-                <span class="flex items-center gap-2">
-                    <button class="select-all-btn text-xs font-semibold text-blue-600 hover:underline">全選択</button>
-                    <button class="deselect-all-btn text-xs font-semibold text-blue-600 hover:underline">全解除</button>
+                <span class="whitespace-nowrap">${seriesName} シリーズ <svg class="w-4 h-4 ml-1 transition-transform inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></span>
+                <span class="series-controls-wrapper flex items-center flex-wrap gap-x-3 gap-y-1 justify-end">
+                    <button class="control-action-btn text-xs font-bold text-blue-600 hover:underline" data-scope="series" data-action="select">全選択</button>
+                    ${subtypeButtonsHTML}
+                    <button class="control-action-btn text-xs font-semibold text-slate-500 hover:underline" data-scope="series" data-action="deselect">全解除</button>
                 </span>
             `;
             
@@ -339,27 +353,27 @@ document.addEventListener('DOMContentLoaded', () => {
             checkboxGrid.className = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 text-sm pt-2 pl-4 border-l-2 ml-1';
 
             const sortedModels = seriesGroups[seriesName].sort((a, b) => {
-                 const typeA = getModelSubtype(a.modelName);
-                 const typeB = getModelSubtype(b.modelName);
-                 
-                 const getCapacityInGB = (modelName) => {
-                    const capacityMatch = modelName.match(/(\d+)(GB|TB)/);
-                    if (!capacityMatch) return 0;
-                    let value = parseInt(capacityMatch[1]);
-                    const unit = capacityMatch[2];
-                    if (unit === 'TB') {
-                        value *= 1024; // Convert TB to GB for sorting
-                    }
-                    return value;
-                 };
+                  const typeA = getModelSubtype(a.modelName);
+                  const typeB = getModelSubtype(b.modelName);
+                  
+                  const getCapacityInGB = (modelName) => {
+                      const capacityMatch = modelName.match(/(\d+)(GB|TB)/);
+                      if (!capacityMatch) return 0;
+                      let value = parseInt(capacityMatch[1]);
+                      const unit = capacityMatch[2];
+                      if (unit === 'TB') {
+                          value *= 1024; // Convert TB to GB for sorting
+                      }
+                      return value;
+                  };
 
-                 const capacityA = getCapacityInGB(a.modelName);
-                 const capacityB = getCapacityInGB(b.modelName);
+                  const capacityA = getCapacityInGB(a.modelName);
+                  const capacityB = getCapacityInGB(b.modelName);
 
-                 if (subtypeOrder.indexOf(typeA) !== subtypeOrder.indexOf(typeB)) {
-                     return subtypeOrder.indexOf(typeA) - subtypeOrder.indexOf(typeB);
-                 }
-                 return capacityA - capacityB;
+                  if (subtypeOrder.indexOf(typeA) !== subtypeOrder.indexOf(typeB)) {
+                      return subtypeOrder.indexOf(typeA) - subtypeOrder.indexOf(typeB);
+                  }
+                  return capacityA - capacityB;
             });
 
             sortedModels.forEach(s => {
@@ -412,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         mode: 'index',
                         intersect: false,
                         callbacks: {
-                           label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? '¥' + ctx.parsed.y.toLocaleString() : 'N/A'}`
+                            label: (ctx) => ` ${ctx.dataset.label}: ${ctx.parsed.y !== null ? '¥' + ctx.parsed.y.toLocaleString() : 'N/A'}`
                         }
                     }
                 },
@@ -500,6 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             canvas.style.display = 'none';
             document.getElementById('custom-legend-container').innerHTML = '';
             chart.data.datasets = []; chart.data.labels = []; chart.update();
+            updateControlButtons(); // Update buttons even when chart is empty
             return;
         }
         
@@ -563,13 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (s.listPrice && selectedType === 'price') {
                  newDatasets.push({
-                    label: `${s.modelName} (定価)`,
-                    data: Array(displayLabels.length).fill(s.listPrice),
-                    borderColor: color,
-                    borderDash: [5, 5],
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                 });
+                     label: `${s.modelName} (定価)`,
+                     data: Array(displayLabels.length).fill(s.listPrice),
+                     borderColor: color,
+                     borderDash: [5, 5],
+                     borderWidth: 1.5,
+                     pointRadius: 0,
+                });
             }
         });
 
@@ -588,8 +603,24 @@ document.addEventListener('DOMContentLoaded', () => {
         chart.options.plugins.title.text = selectedType === 'price' ? '買取価格の推移 (円)' : '利益額の推移 (円)';
         chart.update();
         generateCustomLegend();
+        updateControlButtons();
     }
     
+    function updateControlButtons() {
+        // This function now only needs to handle the toggle buttons (subtypes)
+        document.querySelectorAll('#model-controls details').forEach(details => {
+            const seriesCheckboxes = details.querySelectorAll('input[type="checkbox"]');
+            details.querySelectorAll('.toggle-select-btn[data-scope="subtype"]').forEach(subtypeBtn => {
+                const subtype = subtypeBtn.dataset.subtype;
+                const subtypeCheckboxes = Array.from(seriesCheckboxes).filter(cb => getModelSubtype(cb.dataset.model) === subtype);
+                const subtypeCheckedCount = subtypeCheckboxes.filter(cb => cb.checked).length;
+                
+                const allInSubtypeAreSelected = subtypeCheckboxes.length > 0 && subtypeCheckboxes.length === subtypeCheckedCount;
+                subtypeBtn.textContent = allInSubtypeAreSelected ? `${subtype}全解除` : `${subtype}全選択`;
+            });
+        });
+    }
+
     async function primeAllData() {
         const priceData = await fetchAndProcessData('price');
         const profitData = await fetchAndProcessData('profit');
@@ -631,21 +662,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('click', (event) => {
         const target = event.target;
-        // Series-specific select/deselect
-        if (target.classList.contains('select-all-btn') || target.classList.contains('deselect-all-btn')) {
+        
+        // Handles subtype TOGGLE buttons
+        if (target.matches('.toggle-select-btn')) {
             event.preventDefault();
-            const shouldSelect = target.classList.contains('select-all-btn');
+            const scope = target.dataset.scope;
+            if (scope !== 'subtype') return;
+
+            let checkboxesToChange = [];
             const detailsElement = target.closest('details');
+
             if (detailsElement) {
-                detailsElement.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = shouldSelect);
+                const subtype = target.dataset.subtype;
+                checkboxesToChange = Array.from(detailsElement.querySelectorAll('input[type="checkbox"]'))
+                    .filter(cb => getModelSubtype(cb.dataset.model) === subtype);
+            }
+
+            if (checkboxesToChange.length > 0) {
+                const allSelected = Array.from(checkboxesToChange).every(cb => cb.checked);
+                const newState = !allSelected;
+                checkboxesToChange.forEach(cb => cb.checked = newState);
                 updateChart();
             }
         }
-        // Global select/deselect
-        if(target.id === 'select-all-series' || target.id === 'deselect-all-series'){
-            const shouldSelect = target.id === 'select-all-series';
-             document.querySelectorAll('#model-controls input[type="checkbox"]').forEach(cb => cb.checked = shouldSelect);
-             updateChart();
+
+        // Handles global and series ACTION buttons
+        if (target.matches('.control-action-btn')) {
+            event.preventDefault();
+            const scope = target.dataset.scope;
+            const action = target.dataset.action;
+            const shouldSelect = action === 'select';
+            let checkboxesToChange = [];
+
+            if (scope === 'global') {
+                checkboxesToChange = document.querySelectorAll('#model-controls input[type="checkbox"]');
+            } else if (scope === 'series') {
+                const detailsElement = target.closest('details');
+                if (detailsElement) {
+                    checkboxesToChange = detailsElement.querySelectorAll('input[type="checkbox"]');
+                }
+            }
+            
+            if (checkboxesToChange.length > 0) {
+                checkboxesToChange.forEach(cb => cb.checked = shouldSelect);
+                updateChart();
+            }
         }
     });
 
