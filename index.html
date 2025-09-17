@@ -147,6 +147,55 @@ details[open] summary svg {
 
     <!-- メインコンテンツ (最初は非表示) -->
     <div id="main-content" class="hidden">
+        
+        <!-- サイト概要 -->
+        <section class="bg-white p-6 rounded-lg shadow-md md:min-h-[calc(100vh-180px)] flex flex-col justify-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4 border-b pb-2">iPhone相場について</h2>
+            <p class="text-slate-600 mb-6 leading-relaxed">
+                iPhone相場は、最新のiPhoneの市場動向を様々な要素で分析するための情報サイトです。<br>
+                海外の販売価格や国内での買取価格・過去のデータと比較することで、購入や売却の最適なタイミングを見つける手助けとなることを目指しています。<br>
+                このサイトは個人が作成しているもので閲覧専用サイトです。
+            </p>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-slate-50 p-4 rounded-md border border-slate-200">
+                    <h3 class="font-bold text-lg text-blue-600 mb-2">iPhone 17 情報</h3>
+                    <ul class="space-y-3 text-sm text-slate-700">
+                        <li class="grid grid-cols-[6rem_1fr] items-start gap-x-2">
+                            <strong><a href="iPhone17/overseas-prices.html" class="text-blue-500 hover:underline">海外価格</a></strong>
+                            <span>各国の公式販売価格を比較し、最もお得に購入できる国を掲載しています。</span>
+                        </li>
+                        <li class="grid grid-cols-[6rem_1fr] items-start gap-x-2">
+                            <strong><a href="iPhone17/market-graphs.html" class="text-blue-500 hover:underline">相場グラフ</a></strong>
+                            <span>最新iPhoneの価格推移を確認できるグラフを掲載しています。</span>
+                        </li>
+                        <li class="grid grid-cols-[6rem_1fr] items-start gap-x-2">
+                            <strong><a href="iPhone17/market-prices-logs.html" class="text-blue-500 hover:underline">相場ログ</a></strong>
+                            <span>日々の価格データを時系列で記録した詳細なログを掲載しています。</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-md border border-slate-200">
+                    <h3 class="font-bold text-lg text-blue-600 mb-2">過去データ</h3>
+                     <ul class="space-y-3 text-sm text-slate-700">
+                        <li class="grid grid-cols-[6rem_1fr] items-start gap-x-2">
+                            <strong><a href="past-data/market-graphs.html" class="text-blue-500 hover:underline">相場グラフ</a></strong>
+                            <span>過去に販売されたiPhoneの価格推移を確認できるグラフを掲載しています。</span>
+                        </li>
+                        <li class="grid grid-cols-[6rem_1fr] items-start gap-x-2">
+                            <strong><a href="past-data/market-prices-logs.html" class="text-blue-500 hover:underline">相場ログ</a></strong>
+                            <span>過去に販売されたiPhoneの価格データを時系列で記録した詳細なログを掲載しています。</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-slate-50 p-4 rounded-md border border-slate-200 md:col-span-2">
+                     <h3 class="font-bold text-lg text-blue-600 mb-2">お問い合わせ</h3>
+                     <p class="text-sm text-slate-700">サイトに関するご質問やご要望は<a href="inquiry/inquiry.html" class="text-blue-500 hover:underline">お問い合わせフォーム</a>よりお気軽にご連絡ください。</p>
+                </div>
+            </div>
+        </section>
+
+        <div class="border-b border-slate-200 my-12"></div>
+
         <h1 class="text-3xl font-bold text-slate-800 mb-6">実質ドル円レート比較</h1>
 
         <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-8">
@@ -394,3 +443,7 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 </script>
 </body>
 </html>
+
+
+
+
