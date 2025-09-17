@@ -487,9 +487,32 @@ document.addEventListener('DOMContentLoaded', () => {
                                 return 'transparent';
                             }
                         }
-                    } 
+                    },
+                    y1: {
+                        display: window.matchMedia('(min-width: 768px)').matches,
+                        position: 'right',
+                        beginAtZero: false,
+                        grid: {
+                           drawOnChartArea: false, // Don't draw grid lines from this axis
+                        },
+                        ticks: {
+                            stepSize: 5000,
+                             callback: function(value, index, ticks) {
+                                // Only show labels for major ticks (multiples of 10000)
+                                if (value % 10000 === 0) {
+                                    return '¥' + value.toLocaleString();
+                                }
+                                return ''; // No label for minor ticks
+                            }
+                        }
+                    }
                 },
-                onResize: () => placeholder.style.display = 'none'
+                onResize: (chart, size) => {
+                    placeholder.style.display = 'none';
+                    if (chart.options.scales.y1) {
+                       chart.options.scales.y1.display = size.width >= 768;
+                    }
+                }
             }
         });
     }
@@ -641,6 +664,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         chart.options.scales.y.min = scaleMin;
         chart.options.scales.y.max = scaleMax;
+        if (chart.options.scales.y1) {
+            chart.options.scales.y1.min = scaleMin;
+            chart.options.scales.y1.max = scaleMax;
+        }
         // --- End of Min/Max Calculation ---
 
         currentData.series.filter(s => selectedModels.includes(s.modelName)).forEach((s) => {
@@ -811,3 +838,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
