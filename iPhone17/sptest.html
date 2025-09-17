@@ -13,30 +13,52 @@ html, body { height: 100%; margin:0; }
 body { font-family: 'Inter','Noto Sans JP',sans-serif; display:flex; flex-direction:column; min-height:100vh; background:#f1f5f9; }
 header, footer { flex-shrink:0; }
 main { flex-grow:1; }
-summary::-webkit-details-marker {
-    display: none;
+summary::-webkit-details-marker { display: none; }
+summary { list-style: none; }
+details[open] summary svg { transform: rotate(180deg); }
+.scroll-indicator { position: relative; }
+.scroll-indicator::after {
+    content: '›';
+    position: absolute;
+    top: 50%;
+    right: 0.5rem;
+    transform: translateY(-50%);
+    font-size: 2.5rem;
+    font-weight: 200;
+    color: #94a3b8;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    animation: bounce-horizontal 1.5s infinite;
 }
-summary {
-    list-style: none;
+.scroll-indicator.is-scrollable::after { opacity: 1; }
+@keyframes bounce-horizontal {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(-50%) translateX(0); }
+  40% { transform: translateY(-50%) translateX(5px); }
+  60% { transform: translateY(-50%) translateX(2px); }
 }
-details[open] summary svg {
-    transform: rotate(180deg);
+@media (min-width: 768px) { .scroll-indicator::after { display: none; } }
+@media (max-width: 767px) {
+  #table-container table th,
+  #table-container table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  #log-table-head th[colspan="4"] { font-size: 1rem; }
 }
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
 
-<!-- ヘッダー -->
-<header class="bg-white shadow-md sticky top-0 z-10">
+<header class="bg-white shadow-md sticky top-0 z-40">
     <div class="container mx-auto px-6 py-4 flex justify-between items-center">
         <a href="../index.html" class="text-2xl font-bold text-blue-600">iPhone相場</a>
         <nav class="hidden md:flex items-center space-x-6">
             <a href="../index.html" class="text-slate-600 hover:text-blue-600 font-semibold">ホーム</a>
-            <!-- iPhone 17 ドロップダウン (クリック式) -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="iphone17Dropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     iPhone 17
-                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="iphone17Dropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="overseas-prices.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">海外価格</a>
@@ -44,12 +66,10 @@ details[open] summary svg {
                     <a href="market-prices-logs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場ログ</a>
                 </div>
             </div>
-
-            <!-- 過去データ ドロップダウン (クリック式) -->
             <div class="relative js-dropdown">
                 <button data-dropdown-toggle="pastDataDropdown" class="text-slate-600 hover:text-blue-600 font-semibold flex items-center">
                     過去データ
-                     <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 <div id="pastDataDropdown" class="absolute hidden bg-white shadow-lg rounded-md py-2 w-56 z-20 border border-slate-100 top-full mt-2 right-0">
                     <a href="../past-data/market-graphs.html" class="block px-4 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600">相場グラフ</a>
@@ -58,20 +78,16 @@ details[open] summary svg {
             </div>
             <a href="../inquiry/inquiry.html" class="text-slate-600 hover:text-blue-600 font-semibold">お問い合わせ</a>
         </nav>
-        <!-- ハンバーガーメニューボタン -->
         <button id="mobile-menu-button" class="block md:hidden text-slate-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
         </button>
     </div>
-    <!-- モバイルメニュー -->
     <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-slate-200">
         <a href="../index.html" class="block px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold">ホーム</a>
         <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>iPhone 17</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                 <a href="overseas-prices.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">海外価格</a>
@@ -79,10 +95,10 @@ details[open] summary svg {
                 <a href="market-prices-logs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場ログ</a>
             </div>
         </details>
-         <details class="w-full">
+        <details class="w-full">
             <summary class="px-6 py-3 text-slate-600 hover:bg-blue-50 font-semibold flex justify-between items-center cursor-pointer">
                 <span>過去データ</span>
-                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                <svg class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </summary>
             <div class="bg-slate-50">
                <a href="../past-data/market-graphs.html" class="block pl-10 pr-6 py-3 text-sm text-slate-700 hover:bg-blue-100">相場グラフ</a>
@@ -93,33 +109,22 @@ details[open] summary svg {
     </div>
 </header>
 
-<!-- メインコンテンツ -->
 <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-    <h1 class="text-3xl md:text-4xl font-bold text-slate-800 text-center mb-8">相場ログ</h1>
-    
-    <!-- Loading Indicator -->
-    <div id="loading" class="text-center py-12 text-slate-600">
-        <svg class="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        データを読み込んでいます...
+    <h1 class="text-3xl md:text-4xl font-bold text-slate-800 mb-8">iPhone 17シリーズ<br class="sm:hidden">相場ログ</h1>
+    <div id="loader" class="flex justify-center items-center py-20">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
 
-    <!-- Table Container -->
-    <div id="table-container" class="relative overflow-x-auto shadow-md rounded-lg" style="display: none;">
-        <table class="w-full text-sm text-left rtl:text-right text-slate-500">
-            <thead id="log-table-head" class="text-xs text-slate-700 bg-slate-100">
-                <!-- Headers will be inserted here by JavaScript -->
-            </thead>
-            <tbody id="log-table-body">
-                <!-- Data rows will be inserted here by JavaScript -->
-            </tbody>
-        </table>
+    <div class="scroll-indicator">
+        <div id="table-container" class="relative overflow-auto shadow-md rounded-lg" style="max-height: 70vh; display: none;">
+            <table class="w-full min-w-[1200px] text-sm text-left rtl:text-right text-slate-500">
+                <thead id="log-table-head" class="text-xs text-slate-700"></thead>
+                <tbody id="log-table-body"></tbody>
+            </table>
+        </div>
     </div>
 </main>
 
-<!-- フッター -->
 <footer class="bg-slate-800 text-white mt-auto">
     <div class="container mx-auto px-6 py-8 text-center">
         <p>&copy; 2025 iPhone相場. All rights reserved.</p>
@@ -127,197 +132,116 @@ details[open] summary svg {
 </footer>
 
 <script>
-// Function to set up header and menu event listeners
 function setupEventListeners() {
-    // Desktop dropdowns
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
             event.stopPropagation();
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
-            
-            // Close other open dropdowns
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) {
-                    menu.classList.add('hidden');
-                }
+                if (menu.id !== dropdownId) menu.classList.add('hidden');
             });
             dropdownMenu.classList.toggle('hidden');
         });
     });
-
-    // Close dropdowns when clicking outside
     window.addEventListener('click', function(event) {
         if (!event.target.closest('.js-dropdown')) {
-            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                menu.classList.add('hidden');
-            });
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => menu.classList.add('hidden'));
         }
     });
-
-    // Mobile menu toggle
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', (event) => {
-            event.stopPropagation();
-            mobileMenu.classList.toggle('hidden');
-        });
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
     }
-
-    // Accordion within mobile menu
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                // Close other open details elements
                 detailsElements.forEach(otherDetails => {
-                    if (otherDetails !== this && otherDetails.open) {
-                        otherDetails.removeAttribute('open');
-                    }
+                    if (otherDetails !== this && otherDetails.open) otherDetails.removeAttribute('open');
                 });
             }
         });
     });
 }
 
-// Main script execution on DOM content loaded
+function checkTableScroll() {
+    const tableContainer = document.getElementById('table-container');
+    const indicatorWrapper = tableContainer.parentElement;
+    if (!tableContainer || !indicatorWrapper) return;
+    if (tableContainer.scrollWidth > tableContainer.clientWidth) {
+        indicatorWrapper.classList.add('is-scrollable');
+    } else {
+        indicatorWrapper.classList.remove('is-scrollable');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize all the interactive header/menu elements
     setupEventListeners();
 
-    // Fetch and display Google Sheet data
     const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTYONNTc5QlfCluQxJ6p8Lqt_6wECfxf-o-ynkbVz8viX1-UlZAQmgSLBPSEyhk7UwXrCJuarhIr-6z/pub?gid=157180578&single=true&output=csv';
     const tableBody = document.getElementById('log-table-body');
     const tableHead = document.getElementById('log-table-head');
-    const loadingEl = document.getElementById('loading');
+    const loadingEl = document.getElementById('loader');
     const tableContainer = document.getElementById('table-container');
 
-    // Ensure all required elements are on the page before proceeding
-    if (!tableBody || !tableHead || !loadingEl || !tableContainer) {
-        console.error('Required table elements not found in the DOM.');
-        return;
-    }
+    if (!tableBody || !tableHead || !loadingEl || !tableContainer) return;
 
     fetch(sheetUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`Network response was not ok: ${response.statusText}`);
-            }
-            return response.text();
-        })
+        .then(response => response.ok ? response.text() : Promise.reject('Failed'))
         .then(csvText => {
-            // Split rows by newline characters, handling both Windows and Unix endings
             const rows = csvText.trim().split(/\r?\n/);
-            if (rows.length < 3) { // Need headers, capacities, and at least one data row
-                throw new Error("CSV data is insufficient.");
-            }
-            
-            rows.shift(); // Row 1 (Models) is not used, we hardcode them for colspan structure.
-            const subHeaders = rows.shift().split(','); // Row 2 is capacities/currencies.
+            if (rows.length < 3) throw new Error("CSV data is insufficient.");
 
-            // --- Create two-row merged header ---
-            tableHead.innerHTML = ''; // Clear any existing content
-            const tr1 = document.createElement('tr'); // First header row
-            const tr2 = document.createElement('tr'); // Second header row
-
-            // Row 1: Top-level categories
-            // 1. "機種・容量" Header (spans two rows)
-            const dateTh = document.createElement('th');
-            dateTh.scope = 'col';
-            dateTh.rowSpan = 2;
-            dateTh.className = 'px-6 py-3 text-center align-middle font-semibold text-sm';
-            dateTh.textContent = '機種・容量';
-            tr1.appendChild(dateTh);
-
-            // 2. Model Name Headers
-            const modelHeaders = [
-                { name: 'iPhone 17', colspan: 2 },
-                { name: 'iPhone Air', colspan: 3 },
-                { name: 'iPhone 17 Pro', colspan: 3 },
-                { name: 'iPhone 17 Pro MAX', colspan: 4 }
-            ];
-            modelHeaders.forEach(model => {
-                const th = document.createElement('th');
-                th.scope = 'col';
-                th.colSpan = model.colspan;
-                th.className = 'px-6 py-3 text-center font-semibold text-sm';
-                th.textContent = model.name;
-                tr1.appendChild(th);
+            // --- 上3行をヘッダーに ---
+            const headerRows = rows.splice(0, 3);
+            tableHead.innerHTML = '';
+            headerRows.forEach((rowText, rowIndex) => {
+                const tr = document.createElement('tr');
+                const cells = rowText.split(',');
+                cells.forEach((cellText, colIndex) => {
+                    const th = document.createElement('th');
+                    th.scope = 'col';
+                    th.textContent = cellText.trim();
+                    th.className = 'sticky z-20 bg-slate-100 px-6 py-3 text-center font-semibold text-sm';
+                    // 上からの位置
+                    th.style.top = `${rowIndex * 32}px`; // 行の高さに合わせて調整
+                    if (colIndex === 0) th.classList.add('sticky', 'left-0', 'z-30', 'bg-slate-200');
+                    tr.appendChild(th);
+                });
+                tableHead.appendChild(tr);
             });
 
-            // 3. Large "為替" Exchange Rate Header
-            const exchangeTh = document.createElement('th');
-            exchangeTh.scope = 'col';
-            exchangeTh.colSpan = 4;
-            exchangeTh.className = 'px-6 py-3 text-center font-bold text-lg align-middle';
-            exchangeTh.textContent = '為替';
-            tr1.appendChild(exchangeTh);
-
-            // Row 2: Sub-categories (Capacities and Currencies)
-            // 4. Storage Size Headers
-            for (let i = 1; i <= 12; i++) {
-                const th = document.createElement('th');
-                th.scope = 'col';
-                th.className = 'px-6 py-3 text-center font-normal text-sm';
-                th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
-                tr2.appendChild(th);
-            }
-
-            // 5. Currency Pair Headers
-            for (let i = 13; i < subHeaders.length && i <= 16; i++) {
-                const th = document.createElement('th');
-                th.scope = 'col';
-                th.className = 'px-6 py-3 text-center font-normal text-sm';
-                th.textContent = subHeaders[i] ? subHeaders[i].trim() : '';
-                tr2.appendChild(th);
-            }
-
-            tableHead.appendChild(tr1);
-            tableHead.appendChild(tr2);
-
-
-            // --- Populate the table body with data rows ---
+            // --- 残りを tbody に ---
             tableBody.innerHTML = '';
             rows.forEach(rowText => {
                 const rowData = rowText.split(',');
                 const tr = document.createElement('tr');
-                tr.className = 'bg-white border-b hover:bg-slate-50';
-
+                tr.className = 'bg-white border-b';
                 rowData.forEach((cellData, index) => {
-                    const td = document.createElement('td');
-                    td.className = 'px-6 py-4 text-center whitespace-nowrap';
-                    
-                    let formattedData = cellData.trim();
-                    // Format columns B to M (index 1 to 12) with ¥ and commas
-                    if (index >= 1 && index <= 12) {
-                        const num = parseInt(formattedData.replace(/,/g, ''), 10);
-                        if (!isNaN(num)) {
-                            formattedData = '¥' + num.toLocaleString('ja-JP');
-                        }
-                    }
-                    
-                    td.textContent = formattedData;
-                    tr.appendChild(td);
+                    const cell = document.createElement(index === 0 ? 'th' : 'td');
+                    cell.scope = index === 0 ? 'row' : '';
+                    cell.className = 'px-6 py-4 text-center whitespace-nowrap';
+                    cell.textContent = cellData.trim();
+                    tr.appendChild(cell);
                 });
                 tableBody.appendChild(tr);
             });
 
-            // Hide the loading indicator and show the populated table
             loadingEl.style.display = 'none';
             tableContainer.style.display = 'block';
+            checkTableScroll();
         })
         .catch(error => {
-            console.error('Error fetching or parsing Google Sheet data:', error);
-            if (loadingEl) {
-                // Display an error message to the user
-                loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから、ページを再読み込みしてください。</div>`;
-            }
+            console.error('Error:', error);
+            loadingEl.innerHTML = `<div class="text-red-600">データの読み込みに失敗しました。<br>時間をおいてから再読み込みしてください。</div>`;
         });
+
+    window.addEventListener('resize', checkTableScroll);
 });
 </script>
 
 </body>
 </html>
-
