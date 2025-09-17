@@ -22,6 +22,7 @@ summary {
 details[open] summary svg {
     transform: rotate(180deg);
 }
+
 .scroll-indicator {
     position: relative;
 }
@@ -181,7 +182,7 @@ details[open] summary svg {
 <script>
 // Function to set up header and menu event listeners
 function setupEventListeners() {
-    // Desktop dropdowns
+    // Dropdown menu logic
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
@@ -190,7 +191,9 @@ function setupEventListeners() {
             const dropdownMenu = document.getElementById(dropdownId);
             
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) menu.classList.add('hidden');
+                if (menu.id !== dropdownId) {
+                    menu.classList.add('hidden');
+                }
             });
             dropdownMenu.classList.toggle('hidden');
         });
@@ -204,10 +207,14 @@ function setupEventListeners() {
         }
     });
 
+    // Mobile menu logic
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
-        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        mobileMenuButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            mobileMenu.classList.toggle('hidden');
+        });
     }
 
     const detailsElements = document.querySelectorAll('#mobile-menu details');
@@ -223,6 +230,7 @@ function setupEventListeners() {
         });
     });
 }
+
 
 function checkTableScroll() {
     const tableContainer = document.getElementById('table-container');
@@ -313,6 +321,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tr = document.createElement('tr');
                 tr.className = 'bg-white border-b';
 
+                if (rowData[0] && rowData[0].includes('定価')) {
+                    tr.classList.add('sticky-price-row');
+                }
+
                 rowData.forEach((cellData, index) => {
                     const cell = document.createElement(index === 0 ? 'th' : 'td');
                     let formattedData = cellData.trim();
@@ -341,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tableContainer.style.display = 'block';
             
             // --- Dynamically set top position for second header row AFTER the table is visible ---
-            // Defer with a minimal timeout to ensure the browser has rendered the first row
             setTimeout(() => {
                 const firstRow = tableHead.querySelector('tr:first-child');
                 if (firstRow) {
@@ -349,6 +360,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     const secondRowThs = tableHead.querySelectorAll('tr:nth-child(2) th');
                     secondRowThs.forEach(th => {
                         th.style.top = `${firstRowHeight}px`;
+                    });
+                }
+
+                // Handle the sticky price row
+                const priceRow = tableBody.querySelector('.sticky-price-row');
+                if (priceRow) {
+                    const theadHeight = tableHead.getBoundingClientRect().height;
+                    priceRow.classList.add('sticky');
+                    priceRow.style.top = `${theadHeight}px`;
+                    priceRow.style.zIndex = '19'; // Below header (z-20), above side column cells (z-10)
+
+                    // Ensure all cells in the sticky row have a background
+                    priceRow.querySelectorAll('th, td').forEach(cell => {
+                        if (cell.tagName.toLowerCase() === 'th') {
+                            // This is the first cell, needs higher z-index to be on top of other sticky-left cells
+                            cell.style.zIndex = '25'; 
+                        }
+                        cell.classList.add('bg-slate-100');
                     });
                 }
             }, 0);
@@ -368,5 +397,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-
 
