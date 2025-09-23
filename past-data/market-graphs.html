@@ -199,412 +199,336 @@ function formatLabel(dateStr, dateCol) {
     const dateParts = dateStr.split(' ');
 
     if (specialCols.includes(dateCol)) {
-        // For A, AB, BD, if there's a time part like 0:00:00, hide it.
         return dateParts[0];
     } else {
-        // For other columns, if there is time data, put it on a new line.
-        if (dateParts.length > 1) {
-            return [dateParts[0], dateParts.slice(1).join(' ')];
-        } else {
-            return dateStr;
-        }
+        return (dateParts.length > 1) ? [dateParts[0], dateParts.slice(1).join(' ')] : dateStr;
     }
 }
 
-function createChart(model, period){
-  const canvas = document.getElementById('priceChart');
-  const placeholder = document.getElementById('graph-placeholder');
+function rescaleYAxis() {
+    let minPrice = Infinity;
+    let maxPrice = -Infinity;
 
-  if(chartInstance){
-    chartInstance.destroy();
-    chartInstance = null;
-  }
-
-  canvas.style.display = 'block';
-  placeholder.style.display = 'none';
-  const ctx = canvas.getContext('2d');
-
-  const chartData = allData[model]?.[period];
-  if(!chartData || Object.keys(chartData.capacities).length === 0){
-    placeholder.textContent='選択された期間のグラフデータがありません。';
-    placeholder.style.display='flex';
-    canvas.style.display='none';
-    return;
-  }
-
-  const firstCapacityKey = Object.keys(chartData.capacities)[0];
-  if (!firstCapacityKey) {
-    placeholder.textContent='選択された期間のグラフデータがありません。';
-    placeholder.style.display='flex';
-    canvas.style.display='none';
-    return;
-  }
-
-  const labels = chartData.capacities[firstCapacityKey].data.map(point => point.date);
-
-  const colors = ['#3b82f6','#10b981','#f97316','#ec4899','#8b5cf6','#ef4444'];
-  let colorIndex = 0;
-  const datasets = [];
-  const capacities = Object.keys(chartData.capacities).sort((a,b)=>parseInt(a)-parseInt(b));
-
-  capacities.forEach(cap=>{
-    const capData = chartData.capacities[cap];
-    const color = colors[colorIndex % colors.length];
-
-    const alignedPriceData = capData.data.map(point => point.price);
-
-    datasets.push({
-      label: cap,
-      data: alignedPriceData,
-      borderColor: color,
-      borderWidth: 2.5,
-      fill: false,
-      pointRadius: 0,
-      tension: 0.4,
-      spanGaps: true,
-      yAxisID: 'y' // Ensure this dataset is on the left axis
+    chartInstance.data.datasets.forEach((dataset, i) => {
+        if (chartInstance.isDatasetVisible(i)) {
+            dataset.data.forEach(price => {
+                if (price !== null) {
+                    if (price < minPrice) minPrice = price;
+                    if (price > maxPrice) maxPrice = price;
+                }
+            });
+        }
     });
 
-    if(capData.list_price){
-        const listPriceData = new Array(labels.length).fill(capData.list_price);
-        datasets.push({
-            label: cap+' 定価',
-            data: listPriceData,
-            borderColor: color,
-            borderWidth: 1.5,
-            borderDash: [5,5],
-            fill: {
-                target: 'origin',
-                above: 'rgba(0, 0, 0, 0)', // Transparent above the line
-                below: 'rgba(100, 116, 139, 0.05)' // Gray area below the line
-            },
-            pointRadius: 0,
-            tension: 0.1,
-            yAxisID: 'y' // Ensure this dataset is on the left axis
-        });
+    if (minPrice === Infinity) { // No data visible
+        minPrice = 80000;
+        maxPrice = 200000;
     }
-    colorIndex++;
-  });
+    
+    const padding = (maxPrice - minPrice) * 0.05;
+    const scaleMin = Math.floor((minPrice - padding) / 10000) * 10000;
+    const scaleMax = Math.ceil((maxPrice + padding) / 10000) * 10000;
 
-  let minPrice = Infinity;
-  let maxPrice = -Infinity;
+    chartInstance.options.scales.y.min = scaleMin;
+    chartInstance.options.scales.y.max = scaleMax;
+    if (chartInstance.options.scales.y1) {
+        chartInstance.options.scales.y1.min = scaleMin;
+        chartInstance.options.scales.y1.max = scaleMax;
+    }
+}
 
-  datasets.forEach(dataset => {
-      dataset.data.forEach(price => {
-          if (price !== null) {
-              if (price < minPrice) minPrice = price;
-              if (price > maxPrice) maxPrice = price;
-          }
-      });
-  });
 
-  if (minPrice === Infinity || maxPrice === -Infinity) {
-      minPrice = 80000;
-      maxPrice = 200000;
-  }
+function initializeChart() {
+    const canvas = document.getElementById('priceChart');
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+    const ctx = canvas.getContext('2d');
+    const isPc = window.matchMedia('(min-width: 768px)').matches;
 
-  const scaleMin = Math.floor(minPrice / 10000) * 10000;
-  const scaleMax = Math.ceil(maxPrice / 10000) * 10000;
-
-  const isPc = window.matchMedia('(min-width: 768px)').matches;
-
-  chartInstance = new Chart(ctx,{
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: datasets
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          type: 'category',
-          title: { display: true, text: '日付' },
-          grid: {
-            color: 'rgba(0, 0, 0, 0.08)',
-          },
-          ticks: {
-            autoSkip: true,
-            maxRotation: 45,
-            minRotation: 45,
-            maxTicksLimit: 30
-          }
-        },
-        y: { // Left Y-axis
-          min: scaleMin,
-          max: scaleMax,
-          title: { display: true, text: '価格 (円)' },
-          grid: {
-            color: function(context) {
-              if (context.tick.value % 20000 === 0) {
-                return 'rgba(0, 0, 0, 0.1)';
-              }
-              if (context.tick.value % 10000 === 0) {
-                return 'rgba(0, 0, 0, 0.05)';
-              }
-              return 'transparent';
-            },
-          },
-          ticks: { 
-              stepSize: 10000,
-              callback: function(value, index, ticks) {
-                if (Math.round(value) % 20000 === 0) {
-                    return '¥' + value.toLocaleString();
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [] },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 0 },
+            scales: {
+                x: {
+                    type: 'category',
+                    title: { display: true, text: '日付' },
+                    grid: { color: 'rgba(0, 0, 0, 0.08)' },
+                    ticks: { autoSkip: true, maxRotation: 45, minRotation: 45, maxTicksLimit: 30 }
+                },
+                y: {
+                    title: { display: true, text: '価格 (円)' },
+                    grid: {
+                        color: (context) => {
+                            if (context.tick.value % 20000 === 0) return 'rgba(0, 0, 0, 0.1)';
+                            if (context.tick.value % 10000 === 0) return 'rgba(0, 0, 0, 0.05)';
+                            return 'transparent';
+                        },
+                    },
+                    ticks: {
+                        stepSize: 10000,
+                        callback: (value) => (Math.round(value) % 20000 === 0) ? '¥' + value.toLocaleString() : ''
+                    }
+                },
+                y1: {
+                    display: isPc,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: {
+                        stepSize: 10000,
+                        callback: (value) => (Math.round(value) % 20000 === 0) ? '¥' + value.toLocaleString() : ''
+                    }
                 }
-                return '';
-              }
-          }
-        },
-        y1: { // Right Y-axis (PC only)
-          display: isPc,
-          position: 'right',
-          min: scaleMin,
-          max: scaleMax,
-          grid: {
-            drawOnChartArea: false, // Don't draw grid lines from this axis
-          },
-          ticks: { 
-              stepSize: 10000,
-              callback: function(value, index, ticks) {
-                if (Math.round(value) % 20000 === 0) {
-                    return '¥' + value.toLocaleString();
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: (ctx) => {
+                            let label = ctx.dataset.label || '';
+                            if (label) label += ': ';
+                            if (ctx.parsed.y !== null) label += '¥' + ctx.parsed.y.toLocaleString();
+                            return label;
+                        }
+                    }
                 }
-                return '';
-              }
-          }
-        }
-      },
-      plugins: {
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          callbacks: {
-            label: function(ctx){
-              let label=ctx.dataset.label||'';
-              if(label) label+=': ';
-              if (ctx.parsed.y !== null) {
-                label+='¥'+ctx.parsed.y.toLocaleString();
-              }
-              return label;
-            }
-          }
-        }
-      }
-    }
-  });
-}
-
-function selectPeriod(model, period, btn){
-  document.querySelectorAll('#period-selector button').forEach(b=>b.classList.remove('active-btn'));
-  btn.classList.add('active-btn');
-  createChart(model, period);
-}
-
-function selectModel(model, btn){
-  document.querySelectorAll('#model-selector button').forEach(b=>b.classList.remove('active-btn'));
-  btn.classList.add('active-btn');
-
-  const periodSelector = document.getElementById('period-selector');
-  periodSelector.style.display = 'flex';
-  periodSelector.innerHTML='';
-
-  const periodOrder = ['1週間','1ヶ月','3ヶ月','6ヶ月','1年'];
-  const periods = Array.from(modelInfo[model].periods);
-  periods.sort((a,b)=> periodOrder.indexOf(a) - periodOrder.indexOf(b));
-
-  periods.forEach(p=>{
-    const btn=document.createElement('button');
-    btn.textContent=p;
-    btn.className='px-2 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border whitespace-nowrap';
-    btn.addEventListener('click',()=>selectPeriod(model,p,btn));
-    periodSelector.appendChild(btn);
-  });
-
-  const canvas = document.getElementById('priceChart');
-  const placeholder = document.getElementById('graph-placeholder');
-  canvas.style.display='none';
-  placeholder.style.display='flex';
-  placeholder.textContent='期間を選択してください';
-  if(chartInstance){
-    chartInstance.destroy();
-    chartInstance=null;
-  }
-}
-
-async function initializePage(){
-  const loader = document.getElementById('loader');
-  const mainContent = document.getElementById('main-content');
-  const modelSelector = document.getElementById('model-selector');
-
-  const showError = msg=>{
-    modelSelector.innerHTML='';
-    const placeholder=document.getElementById('graph-placeholder');
-    placeholder.style.display='flex';
-    placeholder.innerHTML=msg; // innerHTML used to render <br> tags
-  };
-
-  try{
-    const response = await fetch(CSV_URL);
-    if(!response.ok) throw new Error('CSV取得失敗: '+response.statusText);
-    const text = await response.text();
-    const rows = text.trim().split(/\r?\n/).map(r=>r.split(','));
-
-    if(rows.length < 4) throw new Error('CSVデータが不十分です。');
-
-    const modelsHeader = rows[0];
-    const capacitiesHeader = rows[1];
-    const listPricesHeader = rows[2];
-    const dataRows = rows.slice(3);
-
-    const listPriceMap = {};
-    for (let c = 1; c < modelsHeader.length; c++) {
-        const model = (modelsHeader[c] || '').trim();
-        const capacity = (capacitiesHeader[c] || '').trim();
-        if (model && capacity) {
-            const list_price = parsePrice(listPricesHeader[c]);
-            if (list_price !== null) {
-                const key = `${model}-${capacity}`;
-                listPriceMap[key] = list_price;
             }
         }
-    }
+    });
+}
 
-    const configBySeries = {
-      'iPhone 14': {
-        '1週間': { dateCol: 0, rows: 8, priceColStart: 1, priceColEnd: 12 },
-        '1ヶ月': { dateCol: 0, rows: 31, priceColStart: 1, priceColEnd: 12 },
-        '3ヶ月': { dateCol: 0, rows: 92, priceColStart: 1, priceColEnd: 12 },
-        '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 },
-        '1年': { dateCol: 0, rows: 365, priceColStart: 1, priceColEnd: 12 }
-      },
-      'iPhone 15': {
-        '1週間': { dateCol: 13, rows: 192, priceColStart: 14, priceColEnd: 26 },
-        '1ヶ月': { dateCol: 13, rows: 744, priceColStart: 14, priceColEnd: 26 },
-        '3ヶ月': { dateCol: 27, rows: 92, priceColStart: 28, priceColEnd: 40 },
-        '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 },
-        '1年': { dateCol: 27, rows: 364, priceColStart: 28, priceColEnd: 40 }
-      },
-      'iPhone 16': {
-        '1週間': { dateCol: 41, rows: 192, priceColStart: 42, priceColEnd: 54 },
-        '1ヶ月': { dateCol: 41, rows: 744, priceColStart: 42, priceColEnd: 54 },
-        '3ヶ月': { dateCol: 55, rows: 92, priceColStart: 56, priceColEnd: 68 },
-        '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 },
-        '1年': { dateCol: 55, rows: 365, priceColStart: 56, priceColEnd: 68 }
-      }
-    };
+function selectPeriod(model, period, btn) {
+    document.querySelectorAll('#period-selector button').forEach(b => b.classList.remove('active-btn'));
+    btn.classList.add('active-btn');
 
-    for (const seriesKey in configBySeries) {
-      const seriesPeriods = configBySeries[seriesKey];
-      for (const periodName in seriesPeriods) {
-        const config = seriesPeriods[periodName];
-        const { dateCol, rows: numRows, priceColStart, priceColEnd } = config;
-        const relevantRows = dataRows.slice(0, numRows);
+    const canvas = document.getElementById('priceChart');
+    const placeholder = document.getElementById('graph-placeholder');
 
-        for (let c = priceColStart; c <= priceColEnd; c++) {
-          const model = (modelsHeader[c] || '').trim();
-          const capacity = (capacitiesHeader[c] || '').trim();
-          
-          if (!model || model === '機種' || !capacity) continue;
-
-          const list_price = listPriceMap[`${model}-${capacity}`] || null;
-
-          if (!allData[model]) {
-            allData[model] = {};
-            modelInfo[model] = { periods: new Set() };
-          }
-          if (!allData[model][periodName]) {
-            allData[model][periodName] = { capacities: {} };
-          }
-          if (!allData[model][periodName].capacities[capacity]) {
-            allData[model][periodName].capacities[capacity] = {
-                list_price: list_price,
-                data: []
-            };
-          }
-          modelInfo[model].periods.add(periodName);
-
-          const currentSeriesData = allData[model][periodName].capacities[capacity].data;
-
-          relevantRows.forEach(row => {
-            const dateStr = row[dateCol]?.trim();
-            if (dateStr) {
-                const price = parsePrice(row[c]);
-                const formattedDate = formatLabel(dateStr, dateCol);
-                currentSeriesData.push({ date: formattedDate, price: price });
-            }
-          });
+    const chartData = allData[model]?.[period];
+    if (!chartData || Object.keys(chartData.capacities).length === 0) {
+        placeholder.textContent = '選択された期間のグラフデータがありません。';
+        placeholder.style.display = 'flex';
+        canvas.style.display = 'none';
+        if (chartInstance) {
+            chartInstance.data.datasets = [];
+            chartInstance.data.labels = [];
+            chartInstance.update('none');
         }
-      }
+        return;
     }
 
-    const modelsBySeries = {
-        'iphone14-series': ['iPhone 14', 'iPhone 14 Plus', 'iPhone 14 Pro', 'iPhone 14 Pro MAX'],
-        'iphone15-series': ['iPhone 15', 'iPhone 15 Plus', 'iPhone 15 Pro', 'iPhone 15 Pro MAX'],
-        'iphone16-series': ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro MAX']
-    };
+    const firstCapacity = Object.keys(chartData.capacities)[0];
+    const newLabels = chartData.capacities[firstCapacity].data.map(p => p.date);
 
-    Object.keys(modelsBySeries).forEach(seriesId => {
-        const seriesContainer = document.getElementById(seriesId);
-        const models = modelsBySeries[seriesId];
+    const newDatasets = [];
+    const colors = ['#3b82f6', '#10b981', '#f97316', '#ec4899', '#8b5cf6', '#ef4444'];
+    const capacities = Object.keys(chartData.capacities).sort((a, b) => parseInt(a) - parseInt(b));
+    let colorIndex = 0;
 
-        models.forEach(m => {
-            if (!allData[m]) return;
-            const btn = document.createElement('button');
-            btn.textContent = m;
-            btn.className = 'w-[calc(50%-0.5rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
-            btn.addEventListener('click', () => selectModel(m, btn));
-            seriesContainer.appendChild(btn);
+    capacities.forEach(cap => {
+        const capData = chartData.capacities[cap];
+        const color = colors[colorIndex % colors.length];
+        const priceData = capData.data.map(point => point.price);
+
+        newDatasets.push({
+            label: cap, data: priceData,
+            borderColor: color, borderWidth: 2.5, fill: false,
+            pointRadius: 0, tension: 0.4, spanGaps: true,
+            yAxisID: 'y'
         });
+
+        if (capData.list_price) {
+            const listPriceData = new Array(priceData.length).fill(capData.list_price);
+            newDatasets.push({
+                label: cap + ' 定価', data: listPriceData,
+                borderColor: color, borderWidth: 1.5, borderDash: [5, 5],
+                fill: { target: 'origin', above: 'rgba(0,0,0,0)', below: 'rgba(100,116,139,0.05)' },
+                pointRadius: 0, tension: 0.1, yAxisID: 'y'
+            });
+        }
+        colorIndex++;
     });
 
-    if(Object.keys(modelInfo).length === 0) {
-        showError('解析できるデータがありません');
+    chartInstance.data.labels = newLabels;
+    chartInstance.data.datasets = newDatasets;
+    
+    rescaleYAxis();
+    chartInstance.update('none');
+    
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
+}
+
+function selectModel(model, btn) {
+    document.querySelectorAll('#model-selector button').forEach(b => b.classList.remove('active-btn'));
+    btn.classList.add('active-btn');
+
+    const periodSelector = document.getElementById('period-selector');
+    periodSelector.style.display = 'flex';
+    periodSelector.innerHTML = '';
+    
+    const canvas = document.getElementById('priceChart');
+    const placeholder = document.getElementById('graph-placeholder');
+
+    const periodOrder = ['1週間', '1ヶ月', '3ヶ月', '6ヶ月', '1年'];
+    const periods = Array.from(modelInfo[model].periods).sort((a, b) => periodOrder.indexOf(a) - periodOrder.indexOf(b));
+    
+    periods.forEach(p => {
+        const periodBtn = document.createElement('button');
+        periodBtn.textContent = p;
+        periodBtn.className = 'px-2 sm:px-4 py-2 text-xs font-semibold rounded-md transition-colors bg-slate-100 text-slate-600 hover:bg-slate-200 border whitespace-nowrap';
+        periodBtn.addEventListener('click', () => selectPeriod(model, p, periodBtn));
+        periodSelector.appendChild(periodBtn);
+    });
+
+    if (chartInstance) {
+        chartInstance.data.labels = [];
+        chartInstance.data.datasets = [];
+        chartInstance.update('none');
     }
 
-  }catch(e){
-    console.error('初期化エラー:', e);
-    let errorMessage = `データ取得または処理に失敗しました。<br>エラー: ${e.message}`;
-    if (e.message.includes('Failed to fetch')) {
-        errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認し、ページを再読み込みしてください。`;
-    } else if (e instanceof TypeError) {
-        errorMessage = `データの形式が正しくないため、処理を続行できませんでした。<br>スプレッドシートの構成を確認してください。`;
+    canvas.style.display = 'none';
+    placeholder.style.display = 'flex';
+    placeholder.textContent = '期間を選択してください';
+}
+
+async function initializePage() {
+    const loader = document.getElementById('loader');
+    const mainContent = document.getElementById('main-content');
+    const modelSelector = document.getElementById('model-selector');
+
+    const showError = msg => {
+        modelSelector.innerHTML = '';
+        const placeholder = document.getElementById('graph-placeholder');
+        placeholder.style.display = 'flex';
+        placeholder.innerHTML = msg;
+    };
+
+    try {
+        const response = await fetch(CSV_URL);
+        if (!response.ok) throw new Error('CSV取得失敗: ' + response.statusText);
+        const text = await response.text();
+        const rows = text.trim().split(/\r?\n/).map(r => r.split(','));
+
+        if (rows.length < 4) throw new Error('CSVデータが不十分です。');
+
+        const modelsHeader = rows[0];
+        const capacitiesHeader = rows[1];
+        const listPricesHeader = rows[2];
+        const dataRows = rows.slice(3);
+
+        const listPriceMap = {};
+        for (let c = 1; c < modelsHeader.length; c++) {
+            const model = (modelsHeader[c] || '').trim();
+            const capacity = (capacitiesHeader[c] || '').trim();
+            if (model && capacity) {
+                const list_price = parsePrice(listPricesHeader[c]);
+                if (list_price !== null) listPriceMap[`${model}-${capacity}`] = list_price;
+            }
+        }
+
+        const configBySeries = {
+            'iPhone 14': { '1週間': { dateCol: 0, rows: 8, priceColStart: 1, priceColEnd: 12 }, '1ヶ月': { dateCol: 0, rows: 31, priceColStart: 1, priceColEnd: 12 }, '3ヶ月': { dateCol: 0, rows: 92, priceColStart: 1, priceColEnd: 12 }, '6ヶ月': { dateCol: 0, rows: 182, priceColStart: 1, priceColEnd: 12 }, '1年': { dateCol: 0, rows: 365, priceColStart: 1, priceColEnd: 12 } },
+            'iPhone 15': { '1週間': { dateCol: 13, rows: 192, priceColStart: 14, priceColEnd: 26 }, '1ヶ月': { dateCol: 13, rows: 744, priceColStart: 14, priceColEnd: 26 }, '3ヶ月': { dateCol: 27, rows: 92, priceColStart: 28, priceColEnd: 40 }, '6ヶ月': { dateCol: 27, rows: 182, priceColStart: 28, priceColEnd: 40 }, '1年': { dateCol: 27, rows: 364, priceColStart: 28, priceColEnd: 40 } },
+            'iPhone 16': { '1週間': { dateCol: 41, rows: 192, priceColStart: 42, priceColEnd: 54 }, '1ヶ月': { dateCol: 41, rows: 744, priceColStart: 42, priceColEnd: 54 }, '3ヶ月': { dateCol: 55, rows: 92, priceColStart: 56, priceColEnd: 68 }, '6ヶ月': { dateCol: 55, rows: 182, priceColStart: 56, priceColEnd: 68 }, '1年': { dateCol: 55, rows: 365, priceColStart: 56, priceColEnd: 68 } }
+        };
+
+        for (const seriesKey in configBySeries) {
+            for (const periodName in configBySeries[seriesKey]) {
+                const { dateCol, rows: numRows, priceColStart, priceColEnd } = configBySeries[seriesKey][periodName];
+                const relevantRows = dataRows.slice(0, numRows);
+
+                for (let c = priceColStart; c <= priceColEnd; c++) {
+                    const model = (modelsHeader[c] || '').trim();
+                    const capacity = (capacitiesHeader[c] || '').trim();
+                    if (!model || model === '機種' || !capacity) continue;
+
+                    const list_price = listPriceMap[`${model}-${capacity}`] || null;
+
+                    if (!allData[model]) {
+                        allData[model] = {};
+                        modelInfo[model] = { periods: new Set() };
+                    }
+                    if (!allData[model][periodName]) allData[model][periodName] = { capacities: {} };
+                    if (!allData[model][periodName].capacities[capacity]) {
+                        allData[model][periodName].capacities[capacity] = { list_price, data: [] };
+                    }
+                    modelInfo[model].periods.add(periodName);
+
+                    const currentSeriesData = allData[model][periodName].capacities[capacity].data;
+                    relevantRows.forEach(row => {
+                        const dateStr = row[dateCol]?.trim();
+                        if (dateStr) {
+                            currentSeriesData.push({ date: formatLabel(dateStr, dateCol), price: parsePrice(row[c]) });
+                        }
+                    });
+                }
+            }
+        }
+
+        const modelsBySeries = {
+            'iphone14-series': ['iPhone 14', 'iPhone 14 Plus', 'iPhone 14 Pro', 'iPhone 14 Pro MAX'],
+            'iphone15-series': ['iPhone 15', 'iPhone 15 Plus', 'iPhone 15 Pro', 'iPhone 15 Pro MAX'],
+            'iphone16-series': ['iPhone 16', 'iPhone 16 Plus', 'iPhone 16 Pro', 'iPhone 16 Pro MAX']
+        };
+
+        Object.keys(modelsBySeries).forEach(seriesId => {
+            const seriesContainer = document.getElementById(seriesId);
+            modelsBySeries[seriesId].forEach(m => {
+                if (!allData[m]) return;
+                const btn = document.createElement('button');
+                btn.textContent = m;
+                btn.className = 'w-[calc(50%-0.5rem)] sm:w-auto px-2 sm:px-4 py-2 text-[11px] sm:text-sm text-center font-semibold rounded-md transition-colors bg-white text-slate-700 shadow-sm hover:bg-slate-100 border whitespace-nowrap';
+                btn.addEventListener('click', () => selectModel(m, btn));
+                seriesContainer.appendChild(btn);
+            });
+        });
+
+        if (Object.keys(modelInfo).length === 0) showError('解析できるデータがありません');
+
+    } catch (e) {
+        console.error('初期化エラー:', e);
+        let errorMessage = `データ取得または処理に失敗しました。<br>エラー: ${e.message}`;
+        if (e.message.includes('Failed to fetch')) errorMessage = `ネットワークエラーによりデータを取得できませんでした。<br>インターネット接続を確認し、ページを再読み込みしてください。`;
+        else if (e instanceof TypeError) errorMessage = `データの形式が正しくないため、処理を続行できませんでした。<br>スプレッドシートの構成を確認してください。`;
+        showError(errorMessage);
+    } finally {
+        loader.style.display = 'none';
+        mainContent.classList.remove('hidden');
     }
-    showError(errorMessage);
-  } finally {
-    loader.style.display = 'none';
-    mainContent.classList.remove('hidden');
-  }
 }
 
 function setupEventListeners() {
-    // デスクトップ用ドロップダウン
     const dropdownToggles = document.querySelectorAll('[data-dropdown-toggle]');
     dropdownToggles.forEach(toggle => {
         toggle.addEventListener('click', function(event) {
             event.stopPropagation();
             const dropdownId = this.getAttribute('data-dropdown-toggle');
             const dropdownMenu = document.getElementById(dropdownId);
-
             document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                if (menu.id !== dropdownId) {
-                    menu.classList.add('hidden');
-                }
+                if (menu.id !== dropdownId) menu.classList.add('hidden');
             });
             dropdownMenu.classList.toggle('hidden');
         });
     });
 
-    // 他の場所をクリックしたらドロップダウンを閉じる
-    window.addEventListener('click', function(event) {
+    window.addEventListener('click', (event) => {
         if (!event.target.closest('.js-dropdown')) {
-            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => {
-                menu.classList.add('hidden');
-            });
+            document.querySelectorAll('.js-dropdown [id$="Dropdown"]').forEach(menu => menu.classList.add('hidden'));
         }
     });
 
-    // モバイルメニューの制御
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     if (mobileMenuButton && mobileMenu) {
@@ -614,36 +538,26 @@ function setupEventListeners() {
         });
     }
 
-    // モバイルメニュー内のアコーディオン
     const detailsElements = document.querySelectorAll('#mobile-menu details');
     detailsElements.forEach(details => {
         details.addEventListener('toggle', function() {
             if (this.open) {
-                // 他の開いているdetailsを閉じる
                 detailsElements.forEach(otherDetails => {
-                    if (otherDetails !== this && otherDetails.open) {
-                        otherDetails.removeAttribute('open');
-                    }
+                    if (otherDetails !== this && otherDetails.open) otherDetails.removeAttribute('open');
                 });
             }
         });
     });
 }
 
-
-document.addEventListener('DOMContentLoaded', () => {
-    // Day.jsのプラグインがグローバルスコープに読み込まれるのを待ってから拡張する
-    if (window.dayjs_plugin_customParseFormat) {
-        dayjs.extend(window.dayjs_plugin_customParseFormat);
-    }
-    if (window.dayjs_plugin_utc) {
-        dayjs.extend(window.dayjs_plugin_utc);
-    }
-    if (window.dayjs_plugin_timezone) {
-        dayjs.extend(window.dayjs_plugin_timezone);
-    }
-    initializePage();
+document.addEventListener('DOMContentLoaded', async () => {
+    if (window.dayjs_plugin_customParseFormat) dayjs.extend(window.dayjs_plugin_customParseFormat);
+    if (window.dayjs_plugin_utc) dayjs.extend(window.dayjs_plugin_utc);
+    if (window.dayjs_plugin_timezone) dayjs.extend(window.dayjs_plugin_timezone);
+    
     setupEventListeners();
+    await initializePage();
+    initializeChart();
 });
 </script>
 
